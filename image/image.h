@@ -9,6 +9,8 @@
 namespace jdg
 {
 
+enum PadWith { ZEROS=0, NEAREST=1 };
+
 template <class pType>
 class Image
 {
@@ -28,14 +30,13 @@ class Image
     // resize the image and canvas
     int resize(int width, int height);
     
-    inline void setPixel( int x, int y, const pType& val );
-
-    inline const pType& getPixel( int x, int y ) const;
-    
     int getWidth() const { return _width; }
     int getHeight() const { return _height; }
     const pType* getData() const { return _data; }
 
+    void pad( int width, int height, const PadWith padding = ZEROS, int xoffset=0, int yoffset=0 );
+
+    // operator overloads
     Image<pType> operator+ (const pType& rhs) const;
     Image<pType> operator- (const pType& rhs) const;
     Image<pType> operator* (const pType& rhs) const;
@@ -52,8 +53,12 @@ class Image
     Image<pType>& operator-=(const Image<pType>& rhs);
     Image<pType>& operator*=(const Image<pType>& rhs);
     Image<pType>& operator/=(const Image<pType>& rhs);
+    
+    inline pType& operator()(int x, int y);
+    inline pType operator()(int x, int y, const PadWith padding = ZEROS) const;
 
     bool operator==(const Image<pType>& rhs) const;
+    bool operator!=(const Image<pType>& rhs) const { return !((*this)==rhs); }
     Image<pType>& operator=(const Image<pType>& rhs);
 
     // load or save the image as a pgm image
@@ -102,7 +107,7 @@ Image<pType> Image<pType>::operator+ (const pType& rhs) const
 
   for ( int i = 0; i < _height; i++ )
     for ( int j = 0; j < _width; j++ )
-      ret.setPixel(j, i, getPixel(j,i) + rhs);
+      ret(j, i) = (*this)(j,i) + rhs;
 
   return ret;
 }
@@ -114,7 +119,7 @@ Image<pType> Image<pType>::operator- (const pType& rhs) const
 
   for ( int i = 0; i < _height; i++ )
     for ( int j = 0; j < _width; j++ )
-      ret.setPixel(j, i, getPixel(j,i) - rhs);
+      ret(j, i) = (*this)(j,i) - rhs;
 
   return ret;
 }
@@ -126,7 +131,7 @@ Image<pType> Image<pType>::operator* (const pType& rhs) const
 
   for ( int i = 0; i < _height; i++ )
     for ( int j = 0; j < _width; j++ )
-      ret.setPixel(j, i, getPixel(j,i) * rhs);
+      ret(j, i) = (*this)(j,i) * rhs;
 
   return ret;
 }
@@ -138,7 +143,7 @@ Image<pType> Image<pType>::operator/ (const pType& rhs) const
 
   for ( int i = 0; i < _height; i++ )
     for ( int j = 0; j < _width; j++ )
-      ret.setPixel(j, i, getPixel(j,i) / rhs);
+      ret(j, i) = (*this)(j,i) / rhs;
 
   return ret;
 }
@@ -149,15 +154,15 @@ Image<pType> Image<pType>::operator+ (const Image<pType>& rhs) const
   int rhs_height = rhs.getHeight(),
       rhs_width = rhs.getWidth();
 
-  // min
-  int height = _height < rhs_height ? _height : rhs_height,
-      width = _width < rhs_width ? _width : rhs_width;
+  // max
+  int height = std::max(_height,rhs_height),
+      width = std::max(_width, rhs_width);
 
   Image<pType> ret(width, height);
 
   for ( int i = 0; i < height; i++ )
     for ( int j = 0; j < width; j++ )
-      ret.setPixel(j, i, getPixel(j,i) + rhs.getPixel(j,i));
+      ret(j, i) = (*this)(j,i) + rhs(j,i);
 
   return ret;
 }
@@ -168,15 +173,15 @@ Image<pType> Image<pType>::operator- (const Image<pType>& rhs) const
   int rhs_height = rhs.getHeight(),
       rhs_width = rhs.getWidth();
 
-  // min
-  int height = _height < rhs_height ? _height : rhs_height,
-      width = _width < rhs_width ? _width : rhs_width;
+  // max
+  int height = std::max(_height,rhs_height),
+      width = std::max(_width, rhs_width);
 
   Image<pType> ret(width, height);
 
   for ( int i = 0; i < height; i++ )
     for ( int j = 0; j < width; j++ )
-      ret.setPixel(j, i, getPixel(j,i) - rhs.getPixel(j,i));
+      ret(j, i) = (*this)(j,i) - rhs(j,i);
 
   return ret;
 }
@@ -187,15 +192,15 @@ Image<pType> Image<pType>::operator* (const Image<pType>& rhs) const
   int rhs_height = rhs.getHeight(),
       rhs_width = rhs.getWidth();
 
-  // min
-  int height = _height < rhs_height ? _height : rhs_height,
-      width = _width < rhs_width ? _width : rhs_width;
+  // max
+  int height = std::max(_height,rhs_height),
+      width = std::max(_width, rhs_width);
 
   Image<pType> ret(width, height);
 
   for ( int i = 0; i < height; i++ )
     for ( int j = 0; j < width; j++ )
-      ret.setPixel(j, i, getPixel(j,i) * rhs.getPixel(j,i));
+      ret(j, i) = (*this)(j,i) * rhs(j,i);
 
   return ret;
 }
@@ -206,15 +211,15 @@ Image<pType> Image<pType>::operator/ (const Image<pType>& rhs) const
   int rhs_height = rhs.getHeight(),
       rhs_width = rhs.getWidth();
 
-  // min
-  int height = _height < rhs_height ? _height : rhs_height,
-      width = _width < rhs_width ? _width : rhs_width;
+  // max
+  int height = std::max(_height,rhs_height),
+      width = std::max(_width, rhs_width);
 
   Image<pType> ret(width, height);
 
   for ( int i = 0; i < height; i++ )
     for ( int j = 0; j < width; j++ )
-      ret.setPixel(j, i, getPixel(j,i) / rhs.getPixel(j,i));
+      ret(j, i) = (*this)(j,i) / rhs(j,i);
 
   return ret;
 }
@@ -224,7 +229,7 @@ Image<pType>& Image<pType>::operator+=(const pType& rhs)
 {
   for( int i = 0; i < _height; i++ )
     for ( int j = 0; j < _width; j++ )
-      setPixel(j, i, getPixel(j,i) + rhs);
+      (*this)(j, i) += rhs;
 
   return *this;
 }
@@ -234,7 +239,7 @@ Image<pType>& Image<pType>::operator-=(const pType& rhs)
 {
   for( int i = 0; i < _height; i++ )
     for ( int j = 0; j < _width; j++ )
-      setPixel(j, i, getPixel(j,i) - rhs);
+      (*this)(j, i) -= rhs;
 
   return *this;
 }
@@ -244,7 +249,7 @@ Image<pType>& Image<pType>::operator*=(const pType& rhs)
 {
   for( int i = 0; i < _height; i++ )
     for ( int j = 0; j < _width; j++ )
-      setPixel(j, i, getPixel(j,i) * rhs);
+      (*this)(j, i) *= rhs;
 
   return *this;
 }
@@ -254,7 +259,7 @@ Image<pType>& Image<pType>::operator/=(const pType& rhs)
 {
   for( int i = 0; i < _height; i++ )
     for ( int j = 0; j < _width; j++ )
-      setPixel(j, i, getPixel(j,i) / rhs);
+      (*this)(j, i) /= rhs;
 
   return *this;
 }
@@ -265,13 +270,13 @@ Image<pType>& Image<pType>::operator+=(const Image<pType>& rhs)
   int rhs_height = rhs.getHeight(),
       rhs_width = rhs.getWidth();
 
-  // min
-  int height = _height < rhs_height ? _height : rhs_height,
-      width = _width < rhs_width ? _width : rhs_width;
+  // max
+  int height = std::max(_height, rhs_height),
+      width = std::max(_width, rhs_width);
 
   for( int i = 0; i < height; i++ )
     for ( int j = 0; j < width; j++ )
-      setPixel(j, i, getPixel(j,i) + rhs.getPixel(j,i));
+      (*this)(j, i) += rhs(j,i);
 
   return *this;
 }
@@ -282,13 +287,13 @@ Image<pType>& Image<pType>::operator-=(const Image<pType>& rhs)
   int rhs_height = rhs.getHeight(),
       rhs_width = rhs.getWidth();
 
-  // min
-  int height = _height < rhs_height ? _height : rhs_height,
-      width = _width < rhs_width ? _width : rhs_width;
+  // max
+  int height = std::max(_height, rhs_height),
+      width = std::max(_width, rhs_width);
 
   for( int i = 0; i < height; i++ )
     for ( int j = 0; j < width; j++ )
-      setPixel(j, i, getPixel(j,i) - rhs.getPixel(j,i));
+      (*this)(j, i) -= rhs(j,i);
 
   return *this;
 }
@@ -299,13 +304,13 @@ Image<pType>& Image<pType>::operator*=(const Image<pType>& rhs)
   int rhs_height = rhs.getHeight(),
       rhs_width = rhs.getWidth();
 
-  // min
-  int height = _height < rhs_height ? _height : rhs_height,
-      width = _width < rhs_width ? _width : rhs_width;
+  // max
+  int height = std::max(_height, rhs_height),
+      width = std::max(_width, rhs_width);
 
   for( int i = 0; i < height; i++ )
     for ( int j = 0; j < width; j++ )
-      setPixel(j, i, getPixel(j,i) * rhs.getPixel(j,i));
+      (*this)(j, i) *= rhs(j,i);
 
   return *this;
 }
@@ -316,13 +321,13 @@ Image<pType>& Image<pType>::operator/=(const Image<pType>& rhs)
   int rhs_height = rhs.getHeight(),
       rhs_width = rhs.getWidth();
 
-  // min
-  int height = _height < rhs_height ? _height : rhs_height,
-      width = _width < rhs_width ? _width : rhs_width;
+  // max
+  int height = std::max(_height, rhs_height),
+      width = std::max(_width, rhs_width);
 
   for( int i = 0; i < height; i++ )
     for ( int j = 0; j < width; j++ )
-      setPixel(j, i, getPixel(j,i) / rhs.getPixel(j,i));
+      (*this)(j, i) /= rhs(j,i);
 
   return *this;
 }
@@ -355,14 +360,27 @@ Image<pType>& Image<pType>::operator=(const Image<pType>& rhs)
 }
 
 template <class pType>
-inline void Image<pType>::setPixel( int x, int y, const pType& val )
+inline pType& Image<pType>::operator()(int x, int y)
 {
-  _data[x+y*_width] = val;
+  return _data[x+y*_width];
 }
 
 template <class pType>
-const pType& Image<pType>::getPixel( int x, int y ) const
+inline pType Image<pType>::operator()(int x, int y, const PadWith padding) const
 {
+  if ( x >= _width || y >= _height || x < 0 || y < 0 )
+  {
+    if ( padding == ZEROS )
+      return static_cast<pType>(0);
+    else if ( padding == NEAREST )
+    {
+      x = std::max(0,x);
+      y = std::max(0,y);
+      x = std::min(_width-1,x);
+      y = std::min(_height-1,y);
+    }
+  }
+
   return _data[x+y*_width];
 }
 
