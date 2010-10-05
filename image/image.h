@@ -27,13 +27,11 @@ class Image
     // re-allocate memory for the image and change _width and _height
     inline void resizeCanvas(int width, int height);
 
-    // resize the image and canvas
-    int resize(int width, int height);
-    
     int getWidth() const { return _width; }
     int getHeight() const { return _height; }
     const pType* getData() const { return _data; }
 
+    // pad the image
     void pad( int width, int height, const PadWith padding = ZEROS, int xoffset=0, int yoffset=0 );
 
     // operator overloads
@@ -66,11 +64,24 @@ class Image
     // pType must be primitive for load/save to work
     void load(const std::string& filename);
     void save(const std::string& filename) const;
+
   private:
     int _width;
     int _height;
     pType* _data;
 };
+
+template <class pType>
+void Image<pType>::pad( int width, int height, const PadWith padding, int xoffset, int yoffset)
+{
+  Image<pType> ret(width, height);
+
+  for ( int i = 0; i < height; i++ )
+    for ( int j = 0; j < width; j++ )
+      ret(j, i) = (*this)(j-xoffset, i-yoffset, padding);
+
+  *this = ret;
+}
 
 // display image in grayscale
 template <class pType>
@@ -95,8 +106,8 @@ inline void Image<pType>::resizeCanvas(int width, int height)
 {
   if ( _data )
     delete [] _data;
-  width = _width;
-  height = _height;
+  _width = width;
+  _height = height;
   _data = new pType[_width*_height];
 }
 
