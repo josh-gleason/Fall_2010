@@ -10,6 +10,22 @@
 #include <cv.h>
 #include <highgui.h>
 
+namespace std
+{
+  // overloaded min/max functions for complex
+  template <class pType>
+  complex<pType>& max( complex<pType>& lhs, complex<pType>& rhs )
+  {
+    return ( abs(lhs) < abs(rhs) ? rhs : lhs );
+  }
+
+  template <class pType>
+  complex<pType>& min( complex<pType>& lhs, complex<pType>& rhs )
+  {
+    return ( abs(lhs) < abs(rhs) ? lhs : rhs );
+  }
+} // namespace std
+
 namespace jdg
 {
 
@@ -57,6 +73,9 @@ class Image
     // pad the image
     void pad( int width, int height, const PadWith padding = ZEROS,
       int xoffset=0, int yoffset=0 );
+
+    pType min() const;
+    pType max() const;
 
     ////////////////////////////////////////////////////////////////////////////
     // accessor functions                                                     //
@@ -194,6 +213,40 @@ class Image
 };
 
 template <class pType>
+pType Image<pType>::min() const
+{
+  int len = _width * _height;
+
+  pType* data = _data;
+  pType val = *_data;
+
+  for ( int i = 1; i < len; i++ )
+  {
+    if (std::min(*data, val)==*data)
+      val = *data;
+    data++;
+  }
+  return val;
+}
+
+template <class pType>
+pType Image<pType>::max() const
+{
+  int len = _width * _height;
+
+  pType* data = _data;
+  pType val = *_data;
+
+  for ( int i = 1; i < len; i++ )
+  {
+    if (std::max(*data,val)==*data)
+      val = *data;
+    data++;
+  }
+  return val;
+}
+
+template <class pType>
 void Image<pType>::normalize( const NormType type, pType param1, pType param2 )
 {
   if ( !_data ) return;
@@ -205,40 +258,34 @@ void Image<pType>::normalize( const NormType type, pType param1, pType param2 )
 
     for ( int i = _width * _height - 1; i >= 1; --i )
     {
-      if ( _data[i] < min )
-        min = _data[i];
-      if ( _data[i] > max )
-        max = _data[i];
+      min = std::min(_data[i],min);
+      max = std::max(_data[i],max);
     }
 
     pType factor = max-min;
     pType diff = param2-param1;
 
     for ( int i = _width * _height - 1; i >= 0; --i )
-      _data[i] = ((_data[i]-min)*factor)/diff+param1;
+      _data[i] = ((_data[i]-min)*diff)/factor+param1;
   }
-
-  if ( type == MINMAX_LOG )
+  else if ( type == MINMAX_LOG )
   {
-    pType min, max, logmin, logmax;
+    pType min, max;
     *_data = std::log(std::abs(*_data) + 1);
     min = max = *_data;
 
     for ( int i = _width * _height - 1; i >= 1; --i )
     {
       _data[i] = std::log(std::abs(_data[i]) + 1);
-      if ( _data[i] < min )
-        min = _data[i];
-      if ( _data[i] > max )
-        max = _data[i];
+      min = std::min(_data[i],min);
+      max = std::max(_data[i],max);
     }
     
     pType factor = max-min;
     pType diff = param2-param1;
 
     for ( int i = _width * _height - 1; i >= 0; --i )
-      _data[i] = ((_data[i] - min)*factor)/diff+param1;
-
+      _data[i] = ((_data[i] - min)*diff)/factor+param1;
   }
 }
 
