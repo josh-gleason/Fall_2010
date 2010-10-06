@@ -15,6 +15,8 @@ namespace jdg
 
 enum PadWith { ZEROS=0, NEAREST=1 };
 
+enum NormType { MINMAX=0, MINMAX_LOG=1 };
+
 template <class pType>
 class Image
 {
@@ -38,6 +40,9 @@ class Image
     ////////////////////////////////////////////////////////////////////////////
     // other methods                                                          //
     ////////////////////////////////////////////////////////////////////////////
+
+    // normalize the image
+    void normalize( const NormType type, pType param1, pType param2 );
 
     // pType must be primitive for load/save to work
     void load(const std::string& filename);
@@ -187,6 +192,55 @@ class Image
     int _height;
     pType* _data;
 };
+
+template <class pType>
+void Image<pType>::normalize( const NormType type, pType param1, pType param2 )
+{
+  if ( !_data ) return;
+
+  if ( type == MINMAX )
+  {
+    pType min, max;
+    min = max = *_data;
+
+    for ( int i = _width * _height - 1; i >= 1; --i )
+    {
+      if ( _data[i] < min )
+        min = _data[i];
+      if ( _data[i] > max )
+        max = _data[i];
+    }
+
+    pType factor = max-min;
+    pType diff = param2-param1;
+
+    for ( int i = _width * _height - 1; i >= 0; --i )
+      _data[i] = ((_data[i]-min)*factor)/diff+param1;
+  }
+
+  if ( type == MINMAX_LOG )
+  {
+    pType min, max, logmin, logmax;
+    *_data = std::log(std::abs(*_data) + 1);
+    min = max = *_data;
+
+    for ( int i = _width * _height - 1; i >= 1; --i )
+    {
+      _data[i] = std::log(std::abs(_data[i]) + 1);
+      if ( _data[i] < min )
+        min = _data[i];
+      if ( _data[i] > max )
+        max = _data[i];
+    }
+    
+    pType factor = max-min;
+    pType diff = param2-param1;
+
+    for ( int i = _width * _height - 1; i >= 0; --i )
+      _data[i] = ((_data[i] - min)*factor)/diff+param1;
+
+  }
+}
 
 template <class pType>
 void Image<pType>::pad( int width, int height, const PadWith padding,

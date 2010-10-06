@@ -85,7 +85,7 @@ void fft( Image<std::complex<pType> >& f )
       ary_vals[2*i+1] = static_cast<float>(f(i,row).imag());
       
       // multiply by -1^(x+y)
-      if ( i+row%2 != 0 ) // odd
+      if ( (i+row)%2 != 0 ) // odd
       {
         ary_vals[2*i] *= -1;
         ary_vals[2*i+1] *= -1; 
