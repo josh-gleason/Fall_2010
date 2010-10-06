@@ -74,9 +74,6 @@ class Image
     void pad( int width, int height, const PadWith padding = ZEROS,
       int xoffset=0, int yoffset=0 );
 
-    void fft();
-    void ifft();
-
     pType min() const;
     pType max() const;
 
