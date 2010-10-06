@@ -1,3 +1,6 @@
+#ifndef JDG_IMAGE_CLASS
+#define JDG_IMAGE_CLASS
+
 #include <complex>
 #include <string>
 #include <vector>
@@ -16,11 +19,29 @@ template <class pType>
 class Image
 {
   public:
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // constructors/destructor                                                //
+    ////////////////////////////////////////////////////////////////////////////
+
     ~Image();
     Image();
     Image(const Image<pType>& rhs);
     Image(const std::string& filename);
     Image(int width, int height);
+
+    template <class pType2>
+    Image(const Image<pType2>& rhs);
+    template <class pType2>
+    Image(const Image<std::complex<pType2> >& rhs);
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // other methods                                                          //
+    ////////////////////////////////////////////////////////////////////////////
+
+    // pType must be primitive for load/save to work
+    void load(const std::string& filename);
+    void save(const std::string& filename) const;
 
     // display the image in a highgui window and pause for input
     void show(const std::string& window = "image") const;
@@ -28,14 +49,48 @@ class Image
     // re-allocate memory for the image and change _width and _height
     inline void resizeCanvas(int width, int height);
 
+    // pad the image
+    void pad( int width, int height, const PadWith padding = ZEROS,
+      int xoffset=0, int yoffset=0 );
+
+    ////////////////////////////////////////////////////////////////////////////
+    // accessor functions                                                     //
+    ////////////////////////////////////////////////////////////////////////////
+    
     int getWidth() const { return _width; }
     int getHeight() const { return _height; }
     const pType* getData() const { return _data; }
 
-    // pad the image
-    void pad( int width, int height, const PadWith padding = ZEROS, int xoffset=0, int yoffset=0 );
+    ////////////////////////////////////////////////////////////////////////////
+    // operator overloads                                                     //
+    ////////////////////////////////////////////////////////////////////////////
 
-    // operator overloads
+    // accessors to pixels
+    inline pType& operator()(int x, int y);
+    inline pType operator()(int x, int y, const PadWith padding = ZEROS) const;
+   
+    // assignment opperators
+    Image<pType>& operator=(const Image<pType>& rhs);
+
+    template <class pType2>
+    Image<pType>& operator=(const Image<pType2>& rhs);
+    
+    template <class pType2>
+    Image<pType>& operator=(const Image<std::complex<pType2> >& rhs);
+
+    // equality operators
+    bool operator==(const Image<pType>& rhs) const;
+    bool operator!=(const Image<pType>& rhs) const { return !((*this)==rhs); }
+    
+    template <class pType2> 
+    bool operator==(const Image<pType2>& rhs) const;
+    template <class pType2>
+    bool operator!=(const Image<pType2>& rhs) const { return !((*this)==rhs); }
+    
+    template <class pType2>
+    bool operator==(const Image<std::complex<pType2> >& rhs) const;
+    
+    // arithmetic operators
     Image<pType> operator+ (const pType& rhs) const;
     Image<pType> operator- (const pType& rhs) const;
     Image<pType> operator* (const pType& rhs) const;
@@ -44,14 +99,6 @@ class Image
     Image<pType> operator- (const Image<pType>& rhs) const;
     Image<pType> operator* (const Image<pType>& rhs) const;
     Image<pType> operator/ (const Image<pType>& rhs) const;
-    Image<pType>& operator+=(const pType& rhs);
-    Image<pType>& operator-=(const pType& rhs);
-    Image<pType>& operator*=(const pType& rhs);
-    Image<pType>& operator/=(const pType& rhs);
-    Image<pType>& operator+=(const Image<pType>& rhs);
-    Image<pType>& operator-=(const Image<pType>& rhs);
-    Image<pType>& operator*=(const Image<pType>& rhs);
-    Image<pType>& operator/=(const Image<pType>& rhs);
     
     template<class pType2>
     Image<pType> operator+ (const pType2& rhs) const;
@@ -69,6 +116,34 @@ class Image
     Image<pType> operator* (const Image<pType2>& rhs) const;
     template<class pType2>
     Image<pType> operator/ (const Image<pType2>& rhs) const;
+    
+    template<class pType2>
+    Image<pType> operator+ (const std::complex<pType2> & rhs) const;
+    template<class pType2>
+    Image<pType> operator- (const std::complex<pType2> & rhs) const;
+    template<class pType2>
+    Image<pType> operator* (const std::complex<pType2> & rhs) const;
+    template<class pType2>
+    Image<pType> operator/ (const std::complex<pType2> & rhs) const;
+    template<class pType2>
+    Image<pType> operator+ (const Image<std::complex<pType2> >& rhs) const;
+    template<class pType2>
+    Image<pType> operator- (const Image<std::complex<pType2> >& rhs) const;
+    template<class pType2>
+    Image<pType> operator* (const Image<std::complex<pType2> >& rhs) const;
+    template<class pType2>
+    Image<pType> operator/ (const Image<std::complex<pType2> >& rhs) const;
+
+    // compound operators
+    Image<pType>& operator+=(const pType& rhs);
+    Image<pType>& operator-=(const pType& rhs);
+    Image<pType>& operator*=(const pType& rhs);
+    Image<pType>& operator/=(const pType& rhs);
+    Image<pType>& operator+=(const Image<pType>& rhs);
+    Image<pType>& operator-=(const Image<pType>& rhs);
+    Image<pType>& operator*=(const Image<pType>& rhs);
+    Image<pType>& operator/=(const Image<pType>& rhs);
+
     template<class pType2>
     Image<pType>& operator+=(const pType2& rhs);
     template<class pType2>
@@ -85,35 +160,37 @@ class Image
     Image<pType>& operator*=(const Image<pType2>& rhs);
     template<class pType2>
     Image<pType>& operator/=(const Image<pType2>& rhs);
-    
-    template <class pType2>
-    Image<pType>& operator=(const Image<pType2>& rhs);
-    
-    template <class pType2>
-    Image<pType>& operator=(const Image<std::complex<pType2> >& rhs);
-    
-    inline pType& operator()(int x, int y);
-    inline pType operator()(int x, int y, const PadWith padding = ZEROS) const;
 
-    bool operator==(const Image<pType>& rhs) const;
-    bool operator!=(const Image<pType>& rhs) const { return !((*this)==rhs); }
-    
-    Image<pType>& operator=(const Image<pType>& rhs);
-    
-    // load or save the image as a pgm image
+    template<class pType2>
+    Image<pType>& operator+=(const std::complex<pType2> & rhs);
+    template<class pType2>
+    Image<pType>& operator-=(const std::complex<pType2> & rhs);
+    template<class pType2>
+    Image<pType>& operator*=(const std::complex<pType2> & rhs);
+    template<class pType2>
+    Image<pType>& operator/=(const std::complex<pType2> & rhs);
+    template<class pType2>
+    Image<pType>& operator+=(const Image<std::complex<pType2> >& rhs);
+    template<class pType2>
+    Image<pType>& operator-=(const Image<std::complex<pType2> >& rhs);
+    template<class pType2>
+    Image<pType>& operator*=(const Image<std::complex<pType2> >& rhs);
+    template<class pType2>
+    Image<pType>& operator/=(const Image<std::complex<pType2> >& rhs);
 
-    // pType must be primitive for load/save to work
-    void load(const std::string& filename);
-    void save(const std::string& filename) const;
+    ////////////////////////////////////////////////////////////////////////////
+    // private data members                                                   //
+    ////////////////////////////////////////////////////////////////////////////
 
-  private:
+  protected:
     int _width;
     int _height;
     pType* _data;
 };
 
 template <class pType>
-void Image<pType>::pad( int width, int height, const PadWith padding, int xoffset, int yoffset)
+void Image<pType>::pad( int width, int height, const PadWith padding,
+  int xoffset, int yoffset)
 {
   Image<pType> ret(width, height);
 
@@ -152,8 +229,257 @@ inline void Image<pType>::resizeCanvas(int width, int height)
   _data = new pType[_width*_height];
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template <class pType>
+template <class pType2>
+Image<pType> Image<pType>::operator+ (const std::complex<pType2> & rhs) const
+{
+  Image<pType> ret(_width, _height);
 
+  for ( int i = 0; i < _height; i++ )
+    for ( int j = 0; j < _width; j++ )
+      ret(j, i) = (*this)(j,i) + static_cast<pType>(abs(rhs));
+
+  return ret;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType> Image<pType>::operator- (const std::complex<pType2> & rhs) const
+{
+  Image<pType> ret(_width, _height);
+
+  for ( int i = 0; i < _height; i++ )
+    for ( int j = 0; j < _width; j++ )
+      ret(j, i) = (*this)(j,i) - static_cast<pType>(abs(rhs));
+
+  return ret;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType> Image<pType>::operator* (const std::complex<pType2> & rhs) const
+{
+  Image<pType> ret(_width, _height);
+
+  for ( int i = 0; i < _height; i++ )
+    for ( int j = 0; j < _width; j++ )
+      ret(j, i) = (*this)(j,i) * static_cast<pType>(abs(rhs));
+
+  return ret;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType> Image<pType>::operator/ (const std::complex<pType2> & rhs) const
+{
+  Image<pType> ret(_width, _height);
+
+  for ( int i = 0; i < _height; i++ )
+    for ( int j = 0; j < _width; j++ )
+      ret(j, i) = (*this)(j,i) / static_cast<pType>(abs(rhs));
+
+  return ret;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType> Image<pType>::operator+ (const Image<std::complex<pType2> >& rhs)
+  const
+{
+  int rhs_height = rhs.getHeight(),
+      rhs_width = rhs.getWidth();
+
+  // max
+  int height = std::max(_height,rhs_height),
+      width = std::max(_width, rhs_width);
+
+  Image<pType> ret(width, height);
+
+  for ( int i = 0; i < height; i++ )
+    for ( int j = 0; j < width; j++ )
+      ret(j, i) = (*this)(j,i) + static_cast<pType>(abs(rhs(j,i)));
+
+  return ret;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType> Image<pType>::operator- (const Image<std::complex<pType2> >& rhs)
+  const
+{
+  int rhs_height = rhs.getHeight(),
+      rhs_width = rhs.getWidth();
+
+  // max
+  int height = std::max(_height,rhs_height),
+      width = std::max(_width, rhs_width);
+
+  Image<pType> ret(width, height);
+
+  for ( int i = 0; i < height; i++ )
+    for ( int j = 0; j < width; j++ )
+      ret(j, i) = (*this)(j,i) - static_cast<pType>(abs(rhs(j,i)));
+
+  return ret;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType> Image<pType>::operator* (const Image<std::complex<pType2> >& rhs)
+  const
+{
+  int rhs_height = rhs.getHeight(),
+      rhs_width = rhs.getWidth();
+
+  // max
+  int height = std::max(_height,rhs_height),
+      width = std::max(_width, rhs_width);
+
+  Image<pType> ret(width, height);
+
+  for ( int i = 0; i < height; i++ )
+    for ( int j = 0; j < width; j++ )
+      ret(j, i) = (*this)(j,i) * static_cast<pType>(abs(rhs(j,i)));
+
+  return ret;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType> Image<pType>::operator/ (const Image<std::complex<pType2> >& rhs)
+  const
+{
+  int rhs_height = rhs.getHeight(),
+      rhs_width = rhs.getWidth();
+
+  // max
+  int height = std::max(_height,rhs_height),
+      width = std::max(_width, rhs_width);
+
+  Image<pType> ret(width, height);
+
+  for ( int i = 0; i < height; i++ )
+    for ( int j = 0; j < width; j++ )
+      ret(j, i) = (*this)(j,i) / static_cast<pType>(abs(rhs(j,i)));
+
+  return ret;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType>& Image<pType>::operator+=(const std::complex<pType2> & rhs)
+{
+  for( int i = 0; i < _height; i++ )
+    for ( int j = 0; j < _width; j++ )
+      (*this)(j, i) += static_cast<pType>(abs(rhs));
+
+  return *this;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType>& Image<pType>::operator-=(const std::complex<pType2> & rhs)
+{
+  for( int i = 0; i < _height; i++ )
+    for ( int j = 0; j < _width; j++ )
+      (*this)(j, i) -= static_cast<pType>(abs(rhs));
+
+  return *this;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType>& Image<pType>::operator*=(const std::complex<pType2> & rhs)
+{
+  for( int i = 0; i < _height; i++ )
+    for ( int j = 0; j < _width; j++ )
+      (*this)(j, i) *= static_cast<pType>(abs(rhs));
+
+  return *this;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType>& Image<pType>::operator/=(const std::complex<pType2> & rhs)
+{
+  for( int i = 0; i < _height; i++ )
+    for ( int j = 0; j < _width; j++ )
+      (*this)(j, i) /= static_cast<pType>(abs(rhs));
+
+  return *this;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType>& Image<pType>::operator+=(const Image<std::complex<pType2> >& rhs)
+{
+  int rhs_height = rhs.getHeight(),
+      rhs_width = rhs.getWidth();
+
+  // max
+  int height = std::max(_height, rhs_height),
+      width = std::max(_width, rhs_width);
+
+  for( int i = 0; i < height; i++ )
+    for ( int j = 0; j < width; j++ )
+      (*this)(j, i) += static_cast<pType>(abs(rhs(j,i)));
+
+  return *this;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType>& Image<pType>::operator-=(const Image<std::complex<pType2> >& rhs)
+{
+  int rhs_height = rhs.getHeight(),
+      rhs_width = rhs.getWidth();
+
+  // max
+  int height = std::max(_height, rhs_height),
+      width = std::max(_width, rhs_width);
+
+  for( int i = 0; i < height; i++ )
+    for ( int j = 0; j < width; j++ )
+      (*this)(j, i) -= static_cast<pType>(abs(rhs(j,i)));
+
+  return *this;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType>& Image<pType>::operator*=(const Image<std::complex<pType2> >& rhs)
+{
+  int rhs_height = rhs.getHeight(),
+      rhs_width = rhs.getWidth();
+
+  // max
+  int height = std::max(_height, rhs_height),
+      width = std::max(_width, rhs_width);
+
+  for( int i = 0; i < height; i++ )
+    for ( int j = 0; j < width; j++ )
+      (*this)(j, i) *= static_cast<pType>(abs(rhs(j,i)));
+
+  return *this;
+}
+
+template <class pType>
+template <class pType2>
+Image<pType>& Image<pType>::operator/=(const Image<std::complex<pType2> >& rhs)
+{
+  int rhs_height = rhs.getHeight(),
+      rhs_width = rhs.getWidth();
+
+  // max
+  int height = std::max(_height, rhs_height),
+      width = std::max(_width, rhs_width);
+
+  for( int i = 0; i < height; i++ )
+    for ( int j = 0; j < width; j++ )
+      (*this)(j, i) /= static_cast<pType>(abs(rhs(j,i)));
+
+  return *this;
+}
 
 template <class pType>
 template <class pType2>
@@ -163,7 +489,7 @@ Image<pType> Image<pType>::operator+ (const pType2& rhs) const
 
   for ( int i = 0; i < _height; i++ )
     for ( int j = 0; j < _width; j++ )
-      ret(j, i) = (*this)(j,i) + static_cast<pType2>(rhs);
+      ret(j, i) = (*this)(j,i) + static_cast<pType>(rhs);
 
   return ret;
 }
@@ -402,8 +728,6 @@ Image<pType>& Image<pType>::operator/=(const Image<pType2>& rhs)
 
   return *this;
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <class pType>
 Image<pType> Image<pType>::operator+ (const pType& rhs) const
@@ -653,6 +977,36 @@ bool Image<pType>::operator==(const Image<pType>& rhs) const
 
 template <class pType>
 template <class pType2>
+bool Image<pType>::operator==(const Image<pType2>& rhs) const
+{
+  if ( rhs.getHeight() == _height && rhs.getWidth() == _width )
+  {
+    const pType2* data = rhs.getData();
+    for ( int i = _height*_width-1; i >= 0; --i )
+      if (_data[i] != static_cast<pType>(data[i]))
+        return false;
+    return true;
+  }
+  return false;
+}
+
+template <class pType>
+template <class pType2>
+bool Image<pType>::operator==(const Image<std::complex<pType2> >& rhs) const
+{
+  if ( rhs.getHeight() == _height && rhs.getWidth() == _width )
+  {
+    const std::complex<pType2>* data = rhs.getData();
+    for ( int i = _height*_width-1; i >= 0; --i )
+      if (_data[i] != static_cast<pType>(abs(data[i])))
+        return false;
+    return true;
+  }
+  return false;
+}
+
+template <class pType>
+template <class pType2>
 Image<pType>& Image<pType>::operator=(const Image<std::complex<pType2> >& rhs)
 {
   if ( rhs.getHeight() != _height && rhs.getWidth() != _width )
@@ -661,7 +1015,7 @@ Image<pType>& Image<pType>::operator=(const Image<std::complex<pType2> >& rhs)
   const std::complex<pType2>* data = rhs.getData();
 
   for ( int i = _height*_width-1; i >= 0; --i )
-    _data[i] = static_cast<pType2>(std::abs(data[i]));
+    _data[i] = static_cast<pType>(std::abs(data[i]));
 
   return *this;
 }
@@ -732,7 +1086,8 @@ Image<pType>::Image() : _width(0), _height(0), _data(0)
 {}
 
 template <class pType>
-Image<pType>::Image(const std::string& filename) : _width(0), _height(0), _data(0)
+Image<pType>::Image(const std::string& filename) : _width(0), _height(0),
+  _data(0)
 {
   load(filename);
 }
@@ -748,6 +1103,34 @@ Image<pType>::Image(const Image<pType>& rhs)
 
   for ( int i = _width*_height-1; i>=0; --i )
     _data[i] = data[i];
+}
+
+template <class pType>
+template <class pType2>
+Image<pType>::Image(const Image<pType2>& rhs)
+{
+  _width = rhs.getWidth();
+  _height = rhs.getHeight();
+  _data = new pType[_width*_height];
+
+  const pType2* data = rhs.getData();
+
+  for ( int i = _width*_height-1; i>=0; --i )
+    _data[i] = static_cast<pType>(data[i]);
+}
+
+template <class pType>
+template <class pType2>
+Image<pType>::Image(const Image<std::complex<pType2> >& rhs)
+{
+  _width = rhs.getWidth();
+  _height = rhs.getHeight();
+  _data = new pType[_width*_height];
+
+  const std::complex<pType2>* data = rhs.getData();
+
+  for ( int i = _width*_height-1; i>=0; --i )
+    _data[i] = static_cast<pType>(std::abs(data[i]));
 }
 
 template <class pType>
@@ -845,7 +1228,9 @@ void jdg::Image<pType>::save(const std::string& filename) const
   ofp << _width << " " << _height << std::endl;
   ofp << 255 << std::endl;
 
-  ofp.write( reinterpret_cast<char *>(charImage), (_width*_height)*sizeof(unsigned char));
+  ofp.write(
+    reinterpret_cast<char *>(charImage),
+    (_width*_height)*sizeof(unsigned char));
 
   if (ofp.fail()) {
     std::cout << "Can't write image " << filename << std::endl;
@@ -857,25 +1242,7 @@ void jdg::Image<pType>::save(const std::string& filename) const
   delete [] charImage;
 
 }
-
-// out of class functions //////////////////////////////////////////////////////
-
-template <class pType1, class pType2>
-void convert( const Image<pType1>& source, Image<pType2>& dest )
-{
-  for ( int i = dest.getHeight()-1; i>=0; --i )
-    for ( int j = dest.getWidth()-1; j>=0; --j )
-      dest(j, i) = (unsigned char)source(j, i);
-}
-
-// for converting from complex
-template <class cType, class pType>
-void convert( const Image<std::complex<cType> >& source, Image<pType>& dest )
-{
-  for ( int i = dest.getHeight()-1; i>=0; --i )
-    for ( int j = dest.getWidth()-1; j>=0; --j )
-      dest(j, i) = static_cast<pType>(std::abs(source(j, i)));
-}
-
 } // namespace jdg
+
+#endif // JDG_IMAGE_CLASS
 
