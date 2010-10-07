@@ -61,7 +61,10 @@ namespace jdg
 {
 
 template <class pType>
-void fft( Image<std::complex<pType> >& f )
+void fft( Image<std::complex<pType> >& f, int val=1 );
+
+template <class pType>
+void fft( Image<std::complex<pType> >& f, int val )
 {
   // resize to a power of 2
   int height = std::pow(2, std::ceil(log(f.getHeight())/log(2)));
@@ -85,15 +88,15 @@ void fft( Image<std::complex<pType> >& f )
       ary_vals[2*i+1] = static_cast<float>(f(i,row).imag());
       
       // multiply by -1^(x+y)
-      if ( (i+row)%2 != 0 ) // odd
+      if ( (i+row)%2 != 0 && val >= 0 ) // odd
       {
         ary_vals[2*i] *= -1;
-        ary_vals[2*i+1] *= -1; 
+        ary_vals[2*i+1] *= -1;
       }
     }
 
     // find the fft of the row
-    numrec::fft( ary_vals - 1, width, 1 );
+    numrec::fft( ary_vals - 1, width, val );
 
     // put value back into image and multiply by 1/height
     for ( int i = width-1; i >= 0; --i )
@@ -115,7 +118,7 @@ void fft( Image<std::complex<pType> >& f )
       ary_vals[2*i+1] = static_cast<float>(f(col,i).imag());
     }
 
-    numrec::fft( ary_vals - 1, height, 1 );
+    numrec::fft( ary_vals - 1, height, val );
 
     for ( int i = height-1; i >= 0; --i )
       f(col,i) = std::complex<pType>(
@@ -205,7 +208,7 @@ void convolve( Image<std::complex<pType> >& img, const Image<std::complex<pType>
   // multiplication
   img *= kern;
 
-  ifft(img);
+  fft(img,-1);
 
   img.pad( origW, origH );
 }

@@ -29,7 +29,7 @@ namespace std
 namespace jdg
 {
 
-enum PadWith { ZEROS=0, NEAREST=1 };
+enum PadWith { ZEROS=0, NEAREST=1, WRAP=2, MIRROR=3 };
 
 enum NormType { MINMAX=0, MINMAX_LOG=1 };
 
@@ -1168,6 +1168,40 @@ inline pType Image<pType>::operator()(int x, int y, const PadWith padding) const
       y = std::max(0,y);
       x = std::min(_width-1,x);
       y = std::min(_height-1,y);
+    }
+    else if ( padding == WRAP )
+    {
+      // negative mods don't evaluate how i want, so i'll make them :)
+      if ( x < 0 )
+        x = (_width - (-x % _width)) + (-x / _width + 1) * _width;
+      if ( y < 0 )
+        y = (_height - (-y % _height)) + (-y / _height + 1) * _height;
+
+      x %= _width;
+      y %= _height;
+    }
+    else if ( padding == MIRROR )
+    {
+      // negative mods don't eval... blah blah ditto
+      if ( x < 0 )
+        x = (_width - (-x % _width)) + (-x / _width + 1) * _width;
+      if ( y < 0 )
+        y = (_height - (-y % _height)) + (-y / _height + 1) * _height;
+
+      if ( x >= _width || x < 0 )
+      {
+        if ( (x / _width) % 2 != 0 )
+          x = (_width-1) - (x % _width);
+        else
+          x %= _width;
+      }
+      if ( y >= _height || y < 0 )
+      {
+        if ( (y / _height) % 2 != 0 )
+          y = (_height-1) - (y % _height);
+        else
+          y %= _height;
+      }
     }
   }
 
