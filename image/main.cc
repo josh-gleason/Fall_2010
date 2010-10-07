@@ -2,7 +2,7 @@
 
 using namespace std;
 
-//#define blah
+#define blah
 
 template <class pType>
 struct Point
@@ -20,18 +20,20 @@ int main(int argc, char *argv[])
   jdg::Image<complex<float> > img(argv[1]);
 #ifdef blah
   // create 7x7 averaging kernel
-  jdg::Image<complex<float> > kern(7,7);
+  const int KERN = 31;
+  jdg::Image<complex<float> > kern(KERN, KERN);
 
-  for ( int i = 0; i < 7; i++ )
-    for ( int j = 0; j < 7; j++ )
-      kern(i,j)=1/49.0;
+  for ( int i = 0; i < KERN; i++ )
+    for ( int j = 0; j < KERN; j++ )
+      kern(i,j)=1.0/(KERN*KERN);
 
-  jdg::convolve(img,kern);
-
-  img.normalize( jdg::MINMAX_LOG, 0, 255 );
+  jdg::convolve(img,kern,jdg::ZEROS);
 
   jdg::Image<float> show = img;
   show.show();
+  
+  if ( argc > 2 )
+    show.save(argv[2]);
 #else
   jdg::fft(img,1);
   
@@ -103,6 +105,7 @@ int main(int argc, char *argv[])
 
   if ( argc > 2 )
     show.save(argv[2]);
+
 #endif
   return 0;
 }

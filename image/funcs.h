@@ -64,6 +64,10 @@ template <class pType>
 void fft( Image<std::complex<pType> >& f, int val=1 );
 
 template <class pType>
+void convolve( Image<std::complex<pType> >& img,
+  const Image<std::complex<pType> >& kernel, const PadWith=NEAREST );
+
+template <class pType>
 void fft( Image<std::complex<pType> >& f, int val )
 {
   // resize to a power of 2
@@ -72,7 +76,7 @@ void fft( Image<std::complex<pType> >& f, int val )
 
   // pad the image with zeros
   if ( height != f.getHeight() || width != f.getWidth() )
-    f.pad( width, height, ZEROS );
+    f.pad( width, height, NEAREST );
 
   // large enough to hold rows or columns
   float* ary_vals = new float[std::max(width,height)*2];
@@ -105,7 +109,8 @@ void fft( Image<std::complex<pType> >& f, int val )
         static_cast<pType>(ary_vals[2*i]),     // real part
         static_cast<pType>(ary_vals[2*i+1]));  // imaginary part
       
-      f(i,row) *= 1.0/height;
+      if ( val < 0 )
+        f(i,row) *= 1.0/(height*width);
     }
   }
 
@@ -130,87 +135,35 @@ void fft( Image<std::complex<pType> >& f, int val )
 }
 
 template <class pType>
-void ifft( Image<std::complex<pType> >& f )
-{
-  // resize to a power of 2
-  int height = std::pow(2, std::ceil(log(f.getHeight())/log(2)));
-  int width = std::pow(2, std::ceil(log(f.getWidth())/log(2)));
-
-  // pad the image with zeros
-  if ( height != f.getHeight() || width != f.getWidth() )
-    f.pad( width, height, ZEROS );
-
-  // large enough to hold rows or columns
-  float* ary_vals = new float[std::max(width,height)*2];
-
-  // perform 1D ifft on all rows
-  for ( int row = height-1; row >= 0; --row )
-  {
-    // build a row array
-    for ( int i = width-1; i >= 0; --i )
-    {
-      // build the array for a row
-      ary_vals[2*i] = static_cast<float>(f(i,row).real());
-      ary_vals[2*i+1] = static_cast<float>(f(i,row).imag());
-    }
-
-    // find the ifft of the row
-    numrec::fft( ary_vals - 1, width, -1 );
-
-    // put value back into image and multiply by 1/height
-    for ( int i = width-1; i >= 0; --i )
-    {
-      f(i,row) = std::complex<pType>(
-        static_cast<pType>(ary_vals[2*i]),     // real part
-        static_cast<pType>(ary_vals[2*i+1]));  // imaginary part
-      
-      f(i,row) *= 1.0/height;
-    }
-  }
-
-  // perform 1D ifft on all columns
-  for ( int col = width-1; col >= 0; --col )
-  {
-    for ( int i = height-1; i >= 0; --i )
-    {
-      ary_vals[2*i] = static_cast<float>(f(col,i).real());
-      ary_vals[2*i+1] = static_cast<float>(f(col,i).imag());
-    }
-
-    numrec::fft( ary_vals - 1, height, -1 );
-
-    for ( int i = height-1; i >= 0; --i )
-      f(col,i) = std::complex<pType>(
-        static_cast<pType>(ary_vals[2*i]),
-        static_cast<pType>(ary_vals[2*i+1]));
-  }
-
-  delete [] ary_vals;
-}
-
-template <class pType>
-void convolve( Image<std::complex<pType> >& img, const Image<std::complex<pType> >& kernel )
+void convolve( Image<std::complex<pType> >& img,
+  const Image<std::complex<pType> >& kernel, const PadWith pad )
 {
   Image<std::complex<pType> > kern = kernel;
-
+  
   int origW = img.getWidth(), origH = img.getHeight();
   int dims = 
     max( img.getWidth(), img.getHeight() ) +
-    max( kern.getWidth(), kern.getHeight() ) - 1;
+    max( kern.getWidth(), kern.getHeight() );
+
+  int shiftX = min(img.getWidth(), kernel.getWidth())/2;
+  int shiftY = min(img.getHeight(), kernel.getHeight())/2;
 
   // pad images
-  img.pad( dims, dims );
+  img.pad( dims, dims, pad, shiftX, shiftY );
   kern.pad( dims, dims );
 
+  // fourier transform
   fft(img);
   fft(kern);
 
   // multiplication
   img *= kern;
 
+  // invert fourier
   fft(img,-1);
 
-  img.pad( origW, origH );
+  // unpad the image back to original size ZEROS because it's efficient
+  img.pad( origW, origH, jdg::ZEROS, -2*shiftX, -2*shiftY );
 }
 
 }

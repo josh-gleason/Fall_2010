@@ -17,33 +17,39 @@ int main( int argc, char* argv[] )
       phase(j,i) = phase(j,i) / abs(phase(j,i));
     }
   
-//  jdg::Image<complex<float> > prod=mag*phase;
-
   jdg::fft(mag,-1);
   jdg::fft(phase,-1);
-//  jdg::fft(prod,-1);
-
-  mag.pad( orig.getWidth(), orig.getHeight() );
-  phase.pad( orig.getWidth(), orig.getHeight() );
-//  prod.pad( orig.getWidth(), orig.getHeight() );
+  
+  //mag.pad( orig.getWidth(), orig.getHeight() );
+  //phase.pad( orig.getWidth(), orig.getHeight() );
 
   jdg::Image<float> mag_show=mag;
   jdg::Image<float> phase_show=phase;
-//  jdg::Image<float> prod_show=prod;
+
+  mag_show.pad( orig.getWidth(), orig.getHeight() );
+  phase_show.pad( orig.getWidth(), orig.getHeight() );
 
   mag_show.normalize( jdg::MINMAX_LOG, 0, 255 );
   phase_show.normalize( jdg::MINMAX, 0, 255 );
-  //prod_show.normalize( jdg::MINMAX, 0, 255 );
   
   mag_show.show();
   phase_show.show();
 
-  jdg::convolve(mag,phase);
+  jdg::convolve(mag,phase,jdg::WRAP);
+
+  // shift and resize image by 1/2
+  mag.pad(
+    orig.getWidth(),
+    orig.getHeight(),
+    jdg::WRAP,
+    mag.getWidth()/2,
+    mag.getHeight()/2
+  );  
 
   mag_show=mag;
-  mag_show.normalize( jdg::MINMAX, 0, 255 );
   mag_show.show();
 
- // prod_show.show();
+  if ( argc > 2 )
+  mag_show.save(argv[2]);
 
 }
