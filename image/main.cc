@@ -2,117 +2,6 @@
 
 using namespace std;
 
-int main(int argc, char *argv[])
-{
-  jdg::Image<float> img("boy.pgm");
-  jdg::Image<float> img2("noise_30_deg.pgm");
-  img = img;
-  img2 -= 126;
-
-  img += img2*10;
-
-  img.normalize(jdg::MINMAX,0,255);
-
-  img.show();
-
-  return 0;
-}
-
-/*
-enum FilterType{ IDEAL=0, GAUSSIAN=1, BUTTERWORTH=2 };
-
-template <class pType>
-void buildLowPass( jdg::Image<pType>& filter, FilterType type, float cutoff1,
-  float cutoff2=0.0, bool freq_domain=false );
-
-int main(int argc, char *argv[])
-{
-  jdg::Image<complex<float> > f("noise_30_deg.pgm");
-  jdg::Image<complex<float> > h=f;
-  jdg::Image<complex<float> > i=f;
-
-  //buildLowPass( h, GAUSSIAN, 0.017, 0, true );
-  //buildLowPass( h, BUTTERWORTH, 0.5, 0, true );
-  //buildLowPass( h, IDEAL, 0.1, 0, true );
-  //buildLowPass( i, IDEAL, 0.098, 0, true );
-  buildLowPass( h, IDEAL, 0.09883, 1, true );
-  buildLowPass( i, IDEAL, 0.09882, 1, true );
-
-  // noisy pixels at 0.098821176880261 distance from center
-
-  h-=i; // band pass
-
-  // invert to make bandstop
-  // h*=-1;
-  // h+=1;
-
-  jdg::Image<float> show = h;
-
-  show.normalize( jdg::MINMAX, 0, 255 );
-  show.show();
-
-  jdg::fft(f);
-
-  show = f;
-  show.normalize( jdg::MINMAX_LOG, 0, 255 );
-  show.show();
-  f*=h;
-
-  jdg::fft(f,-1);
-
-  show = f;
-  show.show();
-  //show.save("noise.pgm");
-
-
-  return 0;
-}
-
-
-template <class pType>
-void buildLowPass( jdg::Image<pType>& filter, FilterType type, float param1,
-  float param2, bool freq_domain )
-{
-  //filter.resizeCanvas(512,512);
-  int width = filter.getWidth();
-  int height = filter.getHeight();
-
-  float startX = -width / 2.0,
-      startY = -height / 2.0,
-      stopX = -startX,
-      stopY = -startY;
-
-  param1 = param1 * 0.5*sqrt(width*width+height*height);
-
-  float param1_sqr = param1*param1;
-
-  for ( float y = startY; y < stopY; y+=1.0 )
-    for ( float x = startX; x < stopX; x+=1.0 )
-      if ( type==IDEAL )
-      {
-        if ( sqrt(x*x+y*y) > param1 )
-          filter(x-startX,y-startY) = 0;
-        else
-          filter(x-startX,y-startY) = 1;
-      }
-      else if ( type==GAUSSIAN )
-      {
-        filter(x-startX,y-startY) = exp(-(0.5*x*x+0.5*y*y)/(param1_sqr));
-      }
-      else if ( type==BUTTERWORTH )
-      {
-        //cout << "(" << x-startX << ", " << y-startY << ") " << flush;
-        filter(x-startX,y-startY) = 1.0/(1.0+pow((x*x+y*y)/param1_sqr,param2));
-      }
-      cout << endl;
-  if ( !freq_domain )
-    jdg::fft( filter, -1 );
-}
-
-
-/*
-#define blah
-
 template <class pType>
 struct Point
 {
@@ -126,96 +15,177 @@ struct Point
 
 int main(int argc, char *argv[])
 {
-  jdg::Image<complex<float> > img(argv[1]);
-#ifdef blah
-  // create 7x7 averaging kernel
-  const int KERN = 31;
-  jdg::Image<complex<float> > kern(KERN, KERN);
-
-  for ( int i = 0; i < KERN; i++ )
-    for ( int j = 0; j < KERN; j++ )
-      kern(i,j)=1.0/(KERN*KERN);
-
-  jdg::convolve(img,kern,jdg::NEAREST);
-
-  jdg::Image<float> show = img;
-  show.show();
   
-  if ( argc > 2 )
-    show.save(argv[2]);
-#else
-  jdg::fft(img,1);
+  jdg::Image<float> show_img;
+  jdg::Image<complex<float> > img;
+  jdg::Image<complex<float> > img2;
   
-  jdg::Image<float> show = img;
-  show.normalize( jdg::MINMAX_LOG, 0, 255 );
+  // experiment 1
+    img.load("rect.pgm");
+    jdg::fft(img,1);
+    show_img = img;
+    show_img.normalize(jdg::MINMAX_LOG,0.0,255.0);
+    show_img.save("rect_fft.pgm");
+    show_img.show();
 
-// find top 4 values and remove //temporary because its ugly but it works
+  // experiment 2
+    img.load("boy_noisy.pgm");
+    jdg::fft(img,1);
+      
+    show_img = img;
+    show_img.normalize(jdg::MINMAX_LOG,0.0,255.0);
+    show_img.show();
+    show_img.save("boy_noisy_fft_orig.pgm");
 
-  Point<complex<float> >* top4 = new Point<complex<float> >[4];
-  Point<complex<float> > temp, temp2;
-  for ( int i = 0; i < 4; i++ )
-  {
-    temp.val = img(i,0);
-    temp.x = i;
-    temp.y = 0;
-    top4[i] = temp;
-  }
-
-  Point<int> center;
-  center.x = img.getHeight()/2;
-  center.y = img.getHeight()/2;
-
-  // minimum distance from center
-  float mindist = max(img.getHeight(),img.getWidth())/20;
-
-  #define DIST(p1,p2) sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y))
-
-  for ( int i = img.getHeight()-1; i>=0; --i )
-    for ( int j = img.getWidth()-1; j>=0; --j )
-    {
-      temp.x = j;
-      temp.y = i;
-      if ( DIST(temp, center) > mindist )
+    // find top 4 values and remove
+      Point<complex<float> >* top4 = new Point<complex<float> >[4];
+      Point<complex<float> > temp, temp2;
+      for ( int i = 0; i < 4; i++ )
       {
-        temp.val = img(j,i);
-        for ( int k = 0; k < 4; k++ )
+        temp.val = img(i,0);
+        temp.x = i;
+        temp.y = 0;
+        top4[i] = temp;
+      }
+
+      Point<int> center;
+      center.x = img.getHeight()/2;
+      center.y = img.getHeight()/2;
+
+      // minimum distance from center is 1/20 of image max(height,width)
+      float min_dist = max(img.getHeight(),img.getWidth())/20.0;
+
+      #define DIST(p1,p2) sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y))
+
+      for ( int i = img.getHeight()-1; i>=0; --i )
+        for ( int j = img.getWidth()-1; j>=0; --j )
         {
-          if ( abs(top4[k].val) < abs(img(j,i)) )
+          temp.x = j;
+          temp.y = i;
+          if ( DIST(temp, center) > min_dist )
           {
-            temp2 = temp;
-            temp = top4[k];
-            top4[k] = temp2;
+            temp.val = img(j,i);
+            for ( int k = 0; k < 4; k++ )
+            {
+              if ( abs(top4[k].val) < abs(img(j,i)) )
+              {
+                temp2 = temp;
+                temp = top4[k];
+                top4[k] = temp2;
+              }
+            }
           }
         }
+
+      #undef DIST
+
+      // average with values around it
+      for ( int i = 0; i < 4; i++ )
+      {
+        img(top4[i].x,top4[i].y) = 0;
+        for ( int x = -1; x <= 1; x++ )
+          for ( int y = -1; y <= 1; y++ )
+            if (!( x == 0 && y == 0 ))
+            {
+              img(top4[i].x,top4[i].y)+=img(top4[i].x+x,top4[i].y+y);
+            }
+        img(top4[i].x,top4[i].y) /= 8.0;
       }
-    }
 
-  for ( int i = 0; i < 4; i++ )
-  {
-    img(top4[i].x,top4[i].y) = 0;
-    for ( int x = -1; x <= 1; x++ )
-      for ( int y = -1; y <= 1; y++ )
-        if (!( x == 0 && y == 0 ))
-        {
-          img(top4[i].x,top4[i].y)+=img(top4[i].x+x,top4[i].y+y);
-        }
-    img(top4[i].x,top4[i].y) /= 8.0;
-  }
+      delete [] top4;
+    
+    // save fixed fft
+    show_img = img;
+    show_img.normalize(jdg::MINMAX_LOG,0.0,255.0);
+    show_img.show();
+    show_img.save("boy_noisy_fft_fixed.pgm");
 
-  delete [] top4;
+    // inverse fft
+    jdg::fft(img,-1);
+    
+    // save fixed image
+    show_img = img;
+    show_img.show();
+    show_img.save("boy_noisy_fixed.pgm");
 
-  #undef DIST
+    // try with gausianm 5x5 and 7x7
+    img.load("boy_noisy.pgm");
 
-  jdg::fft(img,-1);
-  show = img;
-  //show.normalize( jdg::MINMAX_LOG, 0, 255 );
- 
-  show.show();
+    // 5x5
+    img2.resizeCanvas(5,5);
+    buildLowPass( img2, jdg::GAUSSIAN, 0.307307, 0, true ); 
 
-  if ( argc > 2 )
-    show.save(argv[2]);
+    float sum = 0.0;
+    // normalize the gaussian to sum to 1
+    for ( int i = 0; i < 5; i++ )
+      for ( int j = 0; j < 5; j++ )
+        sum += abs(img2(j,i));
+    img2 /= sum;
 
-#endif
+    jdg::Image<complex<float> > temp_img(img);
+
+    jdg::convolve( temp_img, img2 );
+    show_img = temp_img;
+    show_img.show();
+    show_img.save("boy_noisy_5x5_gaussian.pgm");
+
+    jdg::convolve( temp_img, img );
+   
+    // 7x7
+    img2.resizeCanvas(7,7);
+    buildLowPass( img2, jdg::GAUSSIAN, 0.307307, 0, true ); 
+
+    sum = 0.0;
+    // normalize the gaussian to sum to 1
+    for ( int i = 0; i < 7; i++ )
+      for ( int j = 0; j < 7; j++ )
+        sum += abs(img2(j,i));
+    img2 /= sum;
+
+    temp_img = img;
+
+    jdg::convolve( temp_img, img2 );
+    show_img = temp_img;
+    show_img.show();
+    show_img.save("boy_noisy_7x7_gaussian.pgm");
+
+    // 15x15
+    img2.resizeCanvas(15,15);
+    buildLowPass( img2, jdg::GAUSSIAN, 0.307307, 0, true ); 
+
+    sum = 0.0;
+    // normalize the gaussian to sum to 1
+    for ( int i = 0; i < 15; i++ )
+      for ( int j = 0; j < 15; j++ )
+        sum += abs(img2(j,i));
+    img2 /= sum;
+
+    temp_img = img;
+
+    jdg::convolve( temp_img, img2 );
+    show_img = temp_img;
+    show_img.show();
+    show_img.save("boy_noisy_15x15_gaussian.pgm");
+    
+    // 25x25
+    img2.resizeCanvas(25,25);
+    buildLowPass( img2, jdg::GAUSSIAN, 0.307307, 0, true ); 
+
+    sum = 0.0;
+    // normalize the gaussian to sum to 1
+    for ( int i = 0; i < 25; i++ )
+      for ( int j = 0; j < 25; j++ )
+        sum += abs(img2(j,i));
+    img2 /= sum;
+
+    temp_img = img;
+
+    jdg::convolve( temp_img, img2 );
+    show_img = temp_img;
+    show_img.show();
+    show_img.save("boy_noisy_25x25_gaussian.pgm");
+
+  // return
   return 0;
 }
-*/
+

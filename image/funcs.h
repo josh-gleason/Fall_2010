@@ -60,6 +60,12 @@ void fft(float data[], unsigned long nn, int isign)
 namespace jdg
 {
 
+enum FilterType{ IDEAL=0, GAUSSIAN=1, BUTTERWORTH=2 };
+
+template <class pType>
+void buildLowPass( jdg::Image<pType>& filter, FilterType type, float cutoff1,
+  float cutoff2=0.0, bool freq_domain=false );
+
 template <class pType>
 void fft( Image<std::complex<pType> >& f, int val=1 );
 
@@ -164,6 +170,44 @@ void convolve( Image<std::complex<pType> >& img,
 
   // unpad the image back to original size ZEROS because it's efficient
   img.pad( origW, origH, jdg::ZEROS, -2*shiftX, -2*shiftY );
+}
+
+template <class pType>
+void buildLowPass( jdg::Image<pType>& filter, FilterType type, float param1,
+  float param2, bool freq_domain )
+{
+  //filter.resizeCanvas(512,512);
+  int width = filter.getWidth();
+  int height = filter.getHeight();
+
+  float startX = -(width-1) / 2.0,
+      startY = -(height-1) / 2.0,
+      stopX = -startX,
+      stopY = -startY;
+
+  param1 = param1 * 0.5*sqrt(width*width+height*height);
+
+  float param1_sqr = param1*param1;
+
+  for ( float y = startY; y <= stopY; y+=1.0 )
+    for ( float x = startX; x <= stopX; x+=1.0 )
+      if ( type==IDEAL )
+      {
+        if ( sqrt(x*x+y*y) > param1 )
+          filter(x-startX,y-startY) = 0;
+        else
+          filter(x-startX,y-startY) = 1;
+      }
+      else if ( type==GAUSSIAN )
+      {
+        filter(x-startX,y-startY) = exp(-(0.5*x*x+0.5*y*y)/(param1_sqr));
+      }
+      else if ( type==BUTTERWORTH )
+      {
+        filter(x-startX,y-startY) = 1.0/(1.0+pow((x*x+y*y)/param1_sqr,param2));
+      }
+  if ( !freq_domain )
+    jdg::fft( filter, -1 );
 }
 
 }
