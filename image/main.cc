@@ -2,6 +2,115 @@
 
 using namespace std;
 
+int main(int argc, char *argv[])
+{
+  jdg::Image<float> img("boy.pgm");
+  jdg::Image<float> img2("noise_30_deg.pgm");
+  img = img;
+  img2 -= 126;
+
+  img += img2*10;
+
+  img.normalize(jdg::MINMAX,0,255);
+
+  img.show();
+
+  return 0;
+}
+
+/*
+enum FilterType{ IDEAL=0, GAUSSIAN=1, BUTTERWORTH=2 };
+
+template <class pType>
+void buildLowPass( jdg::Image<pType>& filter, FilterType type, float cutoff1,
+  float cutoff2=0.0, bool freq_domain=false );
+
+int main(int argc, char *argv[])
+{
+  jdg::Image<complex<float> > f("noise_30_deg.pgm");
+  jdg::Image<complex<float> > h=f;
+  jdg::Image<complex<float> > i=f;
+
+  //buildLowPass( h, GAUSSIAN, 0.017, 0, true );
+  //buildLowPass( h, BUTTERWORTH, 0.5, 0, true );
+  //buildLowPass( h, IDEAL, 0.1, 0, true );
+  //buildLowPass( i, IDEAL, 0.098, 0, true );
+  buildLowPass( h, IDEAL, 0.09883, 1, true );
+  buildLowPass( i, IDEAL, 0.09882, 1, true );
+
+  // noisy pixels at 0.098821176880261 distance from center
+
+  h-=i; // band pass
+
+  // invert to make bandstop
+  // h*=-1;
+  // h+=1;
+
+  jdg::Image<float> show = h;
+
+  show.normalize( jdg::MINMAX, 0, 255 );
+  show.show();
+
+  jdg::fft(f);
+
+  show = f;
+  show.normalize( jdg::MINMAX_LOG, 0, 255 );
+  show.show();
+  f*=h;
+
+  jdg::fft(f,-1);
+
+  show = f;
+  show.show();
+  //show.save("noise.pgm");
+
+
+  return 0;
+}
+
+
+template <class pType>
+void buildLowPass( jdg::Image<pType>& filter, FilterType type, float param1,
+  float param2, bool freq_domain )
+{
+  //filter.resizeCanvas(512,512);
+  int width = filter.getWidth();
+  int height = filter.getHeight();
+
+  float startX = -width / 2.0,
+      startY = -height / 2.0,
+      stopX = -startX,
+      stopY = -startY;
+
+  param1 = param1 * 0.5*sqrt(width*width+height*height);
+
+  float param1_sqr = param1*param1;
+
+  for ( float y = startY; y < stopY; y+=1.0 )
+    for ( float x = startX; x < stopX; x+=1.0 )
+      if ( type==IDEAL )
+      {
+        if ( sqrt(x*x+y*y) > param1 )
+          filter(x-startX,y-startY) = 0;
+        else
+          filter(x-startX,y-startY) = 1;
+      }
+      else if ( type==GAUSSIAN )
+      {
+        filter(x-startX,y-startY) = exp(-(0.5*x*x+0.5*y*y)/(param1_sqr));
+      }
+      else if ( type==BUTTERWORTH )
+      {
+        //cout << "(" << x-startX << ", " << y-startY << ") " << flush;
+        filter(x-startX,y-startY) = 1.0/(1.0+pow((x*x+y*y)/param1_sqr,param2));
+      }
+      cout << endl;
+  if ( !freq_domain )
+    jdg::fft( filter, -1 );
+}
+
+
+/*
 #define blah
 
 template <class pType>
@@ -27,7 +136,7 @@ int main(int argc, char *argv[])
     for ( int j = 0; j < KERN; j++ )
       kern(i,j)=1.0/(KERN*KERN);
 
-  jdg::convolve(img,kern,jdg::ZEROS);
+  jdg::convolve(img,kern,jdg::NEAREST);
 
   jdg::Image<float> show = img;
   show.show();
@@ -109,4 +218,4 @@ int main(int argc, char *argv[])
 #endif
   return 0;
 }
-
+*/

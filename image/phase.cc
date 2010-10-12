@@ -35,7 +35,7 @@ int main( int argc, char* argv[] )
   mag_show.show();
   phase_show.show();
 
-  jdg::convolve(mag,phase,jdg::WRAP);
+  jdg::convolve(mag,phase,jdg::ZEROS);
 
   // shift and resize image by 1/2
   mag.pad(
