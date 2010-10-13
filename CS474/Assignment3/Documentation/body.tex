@@ -1,118 +1,92 @@
 \section{Introduction}
-  Poor lighting and other global conditions can reduce the quality of images. This project
-  examines a few different methods of image enhancement.
-  
-  The first method is global histogram equalization.  Histogram equalization is especially
-  useful for increasing contrast in images.  This works well when an image
-  has poor lighting, where contrast values sit close to each other.
+  The Fourier Transform (FT) is a function that maps a function in the spacial domain, to the frequency domain.
+This is a very useful technique in image processing, because many types of the noise encountered in digital images
+is periodic.  This means that if the frequency of the noise ($\frac{1}{\textup{period}}$) is known then it can
+simply be removed in the frequency domain.  Working in the frequency domain also has the benefit of easily filtering
+out other undesired frequencies.  High frequencies, such as edges can be softened by filtering out higher frequencies,
+similarly the edges can be sharped by filtering out the lower frequencies.  Another important property of the
+FT is that it can be inverted.  This means that the original equation can be derived by applying the inverse
+FT to the the FT of the original function.
 
-  Another method which was implemented is a global histogram specification, also commonly
-  known as histogram matching.  Histogram specification differs from equalization in that
-  rather than matching with a uniform histogram, the histogram is matched with another
-  histogram which is specified by the user.  This can be useful when an image with similar contrast
-  to another image is desired.
-  
-  Finally the method of local median filtering is used to reduce salt and pepper noise from
-  images. For median filtering the values in the vicinity of a pixel are examined, and the
-  median value determined.  This value then replaces the pixel at the center of the area
-  being observed. For comparison purposes, mean filtering was also implemented.  This method
-  examines the pixels surrounding a pixel and determines the mean gray value.
-  This mean then replaces the value of the pixel at the center of the neighborhood.
-  
-  \section{Histogram Equalization}
-  \label{subsec:equalization}
+  The 2D continuous Fourier Transform is defined in Eq.~\ref{eq:ft} and~\ref{eq:ift}, these equation can be adapted to the
+discrete case as Eq.~\ref{eq:dft} and~\ref{eq:idft} shows, this is called the discrete Fourier Transform (DFT).  While the
+continuous Fourier Transform has uses in many other fields of
+signal processing, it is not relevant, except for deriving the DFT in this work because digital images exist only
+as discrete functions.  In Eq.~\ref{eq:dft} and~\ref{eq:idft}, $M$ and $N$ stand for the height and width
+of the image.  It is important to notice that if these values are equal the only difference in between the forward and
+reverse DFT is the sign of the exponent.  This is a property that simplifies implementation of the function because
+the function only needs to be implemented once with a flag to denote the sign of the exponent.
 
-  Equalization was implemented by first building a function which calculates the histogram of
-  an image. The histogram is built by simply adding one to the bin corresponding to that
-  pixel value for every pixel in the image.  Every bin is then divided by the total number
-  of pixels in the image to normalize it.  The histogram $p(r_k)$ can be defined as follows.
-  
-  \[
-    p(r_k)={n_k \over N}
-  \]
+  Using these definitions it can also be shown that the multiplication of two functions in the frequency domain is
+equivalent to convolution in the spacial domain.  Although applying this property using Eq.~\ref{eq:dft} and~\ref{eq:idft}
+to compute the DFT, the complexity is no better than convolution in the spacial domain, however using a technique known as
+the Fast Fourier Transform (FFT) this operation becomes much more efficient.
 
-  $k$ is the pixel intensity, $r_k$ is the bin in our histogram that represents $k$, $n_k$ is the
-  number of pixels with intensity $k$ in the image, and $N$ is the number of total pixels, or the
-  size of the image.
+\begin{equation}
+  \label{eq:ft}
+  \Im(f(x,y))=F(u,v)=\int_{-\infty}^{\infty} \int_{-\infty}^{\infty} f(x,y)e^{-j2\pi(ux+vy)} dx dy
+\end{equation}
 
-  Once the histogram is calculated, calculating the transformation function $s_k$ was done by
-  creating a running total of the values in the histogram, and then de-normalizing by multiplying
-  by the maximum pixel value.  This is defined as follows.
+\begin{equation}
+  \label{eq:ift}
+  \Im^{-1}(F(u,v))=f(x,y)=\int_{-\infty}^{\infty} \int_{-\infty}^{\infty} F(u,v)e^{-j2\pi(ux+vy)} du dv
+\end{equation}
 
-  \[
-    s_k=T(r_k)=255 \sum_{j=0}^{k}p(r_j) =255 \sum_{j=0}^{k} {n_j \over N}
-  \]
+\begin{equation}
+  \label{eq:dft}
+  \Im(f(x,y))=F(u,v)=\frac{1}{M} \sum_{x=0}^{M-1} \sum_{y=0}^{N-1} f(x,y) e^{-j2 \pi ( \frac{ux}{M} + \frac{vy}{N} )}
+\end{equation}
 
-  The next step was to simply map all the pixels from the original image into $T(r_k)$.  This was
-  done quite easily since $s_k$ was already de-normalized to have a range from 0 to 255.
-  
-  This method worked remarkably well for being such a simple process.  The results in Fig.
-  $[$\hyperref[fig:lenna_equal]{1}, \hyperref[fig:sf_equal]{2}, \hyperref[fig:lax_equal]{3}$]$ show the results of histogram
-  equalization.  In Fig. $[$\hyperref[fig:lenna_equal]{1}$]$ the results are subtle, but the image looks
-  like it has better contrast.  In Fig. $[$\hyperref[fig:sf_equal]{2}$]$ there is a great improvement
-  in the quality of the image.  However in Fig. $[$\hyperref[fig:lax_equal]{3}$]$ it seems as if the contrast 
-  has been expanded just a little too much.  The image looks much too bright in some areas,
-  and too dark in others.
+\begin{equation}
+  \label{eq:idft}
+  \Im^{-1}(F(u,v))=f(x,y)=\frac{1}{N} \sum_{u=0}^{M-1} \sum_{v=0}^{N-1} F(u,v) e^{j2 \pi ( \frac{ux}{M} + \frac{vy}{N} )}
+\end{equation}
 
-  \section{Histogram Specification}
- 
-  Matching the histogram for the image with another histogram is similar to histogram equalization
-  except that instead of mapping the histogram to a constant distribution, it is mapped to model
-  another histogram.  This histogram could be any histogram, including one taken from another
-  image.
+\section{Implementation}
+  For this project, the FFT function from the Numerical Recipes book was used.  By using the separability of the 2D DFT,
+this was achieved by simply applying the FFT on all the rows of an image, followed by applying on all the columns.  For
+viewing and editing purposes, the image was shifted by negating every other pixel in the image before applying this transformation.
+This effectively shifted the image by half, making it easier to view and also easier to modify.
 
-  For implementation, the histogram of the image is calculated, and then the equalization function
-  is calculated for both the input image, and the specification histogram that was passed as the other
-  parameter to the function.  These steps use the same functions created in Sect.~\ref{subsec:equalization}.
+  The first experiment required that the 2D FFT function be tested on a 32x32 pixel rectangle located in the center of a 512x512 pixel
+image.  Once the FFT was calculated for the image, it was normalized to a logarithmic scale between 0 and 255 to be displayed.
 
-  We will call the equalization function for the input image $T(r_k)$ and the equalization
-  function of the specification histogram $S(r_k)$.  To create the new transformation, for each
-  grey level $x$, we find $T(x)$ and then find the value $y$ such that $S(y)$ matches $T(x)$ as
-  close as possible.  Then for the value of our new transform $R$, we define it such that $R(x)=y$.
-  Once this transformation function is complete, we use the same function as we did in Sect.~\ref{subsec:equalization}
-  to calculate our output image.
+  The second experiment was a bit more complex, as it required that the FFT of the image be found and then modified.  After calculating
+the FFT of the noisy boy image, the four strongest pixels needed to be replaced with the average of their neighbors.  This was done by
+searching the image and building a list of four pixels with the highest magnitude.  Any pixel within 5\% of the center of the image was
+ignored to prevent center pixels from being removed (the reason for this is explained in the Results section).  After finding these pixels
+and replacing with the average of the neighbors the inverse FFT was found and saved as the resulting image.
 
-  This method worked well for correcting contrast issues with images, assuming we had another image
-  that had the desired contrast.  In Fig. $[$\hyperref[fig:lax_spec]{4b}$]$ we can see that the
-  contrast seems much more appropriate than it did for Equalization (Fig. $[$\hyperref[fig:lax_equal]{3}$]$).
-  It also has some other interesting results, such as in Fig. $[$\hyperref[fig:lenna_spec]{5c}$]$ where
-  the image has been specified with the histogram from the input image in Fig. $[$\hyperref[fig:lax_spec]{4}$]$.
-  If the two images are compared we can see that the contrast is nearly identical.  This could be
-  a very useful property when using images where illumination effects are required.  If histogram
-  specification were used, the contrast between two images taken for the same purpose could be
-  made closer to each other, which may strengthen a particular vision algorithm or something similar.
-  \section{Median Filtering}
-  
-  Salt and pepper noise is very difficult to deal with using linear filters (such as mean).  However
-  this noise can be greatly reduced when using a median filter.  This can be understood intuitively.
-  If there are approximately an equal number of white (salt) and black (pepper) values in a particular
-  vicinity, then the median value will no be either of these values.  In fact it will be one of the
-  in-between values that was in the original image.  When using a mean, although some values are
-  kept from the original image, the weights of these original pixels are overpowered by the white and
-  black values.  For this reason median filtering is the filter of choice when dealing with salt and
-  pepper noise.
+  In an attempt to remove the noise in the spacial domain, various Gaussian kernel were constructed and filtered across the image.  The
+kernel was calculated using a variance of approximately $1$.  Then the values in the kernel were divided by the sum of values to make
+sure all the values summed to 1.  This ensured that the image would not be dimmed or brightened by the filter.  A total of four filters
+were tested on the image, those being a 5x5, 7x7, 15x15, and 25x25.
 
-  The implementation of the algorithm was very straight forward.  Simply put the pixel, as well as its
-  neighbors within a predefined distance, into an array.  Then sort the array and retrieve the value
-  in the center.
+\section{Results}
 
-  This method was used to attempt to reduce salt and pepper noise in images with 50\% noise and 75\%
-  noise.  In these experiments different sized filters were used, namely 3x3, 5x5, and 7x7.  While
-  the 7x7 filter reduced the most noise, it also lost the most detail in the image; although for
-  mean the larger filters were even more distorted than the smaller ones.  In Fig. 
-  $[$\hyperref[fig:peppers_median]{8}$]$ this can be observed.  When looking at the original image
-  with the 75\% noise, it is difficult to believe that any useful information can be extracted
-  from the image.  For this reason it is quite impressive that the median filter is able to perform
-  as well as it did.
+  The results of taking the FFT of the rectangle image verified that the FFT worked as predicted and returned a $sinc$ function.  This
+could be shown by taking the 2D FFT of a step function with a finite range.
+
+  By removing the four pixels with the greatest magnitude the four most prominent frequencies were removed from the image.  By looking
+  at the image the most prominent frequencies appear to obviously be the cosine noise that has been added to the image.  The reason that
+  the center pixels must be ignored is because the very low frequencies such as flat surfaces actually take up the majority of the image
+  which means they are the most prominent frequencies, if they were removed the image would be sharpened, and many of the important features
+  would be lost.
+
+  The results of the Gaussian filtering in the spacial domain did not work nearly as well as directly modifying the frequency domain.  By
+  looking at the results in the Images section, it seems that the noise is not even removed after using a 25x25 filter, at which point
+  so much of the image quality has been lost that it would be pointless to blur any more.  This shows that working in the frequency 
+  domain does have some great benefits over the spacial domain because it would be nearly impossible to remove the noise there, while
+  it was very easy to do so in the frequency domain (modifying only four pixels!).
+
 \newpage
+
 \section{Source Code}
-  \subsection{generic.h}
-    \lstinputlisting{../generic.h}
-  \subsection{equalize.cc}
-    \lstinputlisting{../equalize.cc}
-  \subsection{spec.cc}
-    \lstinputlisting{../spec.cc}
-  \subsection{median.cc}
-    \lstinputlisting{../median.cc}
+  \subsection{funcs.h}
+    \lstinputlisting{../funcs.h}
+  \subsection{main.cc}
+    \lstinputlisting{../main.cc}
+%  \subsection{image.h}
+%    \lstinputlisting{../image.h}
 \section{Images}
   \input{"./images.tex"}
