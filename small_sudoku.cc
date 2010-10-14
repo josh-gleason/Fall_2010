@@ -4,33 +4,14 @@
 
 using namespace std;
 
-void printboard( int board[][9] )
-{
-  for ( int i = 0; i < 9; i++ ) {
-    if ( i%3==0 )
-      cout << "+---+---+---+" << endl;
-    for ( int j = 0; j < 9; j++ ) {
-      if ( j%3==0 )
-        cout << "|";
-      if ( board[i][j] == 0 )
-        cout << ' ';
-      else
-        cout << board[i][j];
-    }
-    cout << "|" << endl;
-  }
-  cout << "+---+---+---+" << endl << endl;
-}
-
 bool checkRow( int board[][9], int row )
 {
   for ( int i = 0; i < 9; i++ )
-    if ( board[row][i] != 0 ) { // if not zero check for duplicate value
-      int tot = 0;
-      for ( int j = 0; j < 9; j++ ) {
+    if ( board[row][i] != 0 ) {
+      for ( int j = 0, tot = 0; j < 9; j++ ) {
         if ( board[row][j] == board[row][i] )
           tot++;
-        if ( tot >= 2 )         // if there are 2 of this val row is bad
+        if ( tot >= 2 )
           return false;
       }
     }
@@ -41,8 +22,7 @@ bool checkCol( int board[][9], int col )
 {
   for ( int i = 0; i < 9; i++ )
     if ( board[i][col] != 0 ) {
-      int tot = 0;
-      for ( int j = 0; j < 9; j++ ) {
+      for ( int j = 0, tot = 0; j < 9; j++ ) {
         if ( board[j][col] == board[i][col] )
           tot++;
         if ( tot >= 2 )
@@ -56,18 +36,15 @@ bool checkBox( int board[][9], int box )
 {
   int startRow = box / 3 * 3, startCol = (box % 3) * 3;
   for ( int i = startRow; i < startRow+3; i++ )
-    for ( int j = startCol; j < startCol+3; j++ ) {
-      if ( board[i][j] != 0 ) {
-        int tot = 0;
-        for ( int k = startRow; k < startRow+3; k++ )
-          for ( int l = startCol; l < startCol+3; l++ ) {
-            if ( board[i][j] == board[k][l] )
-              tot++;
-            if ( tot >= 2 )
-              return false;
-          }
+  for ( int j = startCol; j < startCol+3; j++ )
+    if ( board[i][j] != 0 )
+      for ( int k = startRow, tot = 0; k < startRow+3; k++ )
+      for ( int l = startCol; l < startCol+3; l++ ) {
+        if ( board[i][j] == board[k][l] )
+          tot++;
+        if ( tot >= 2 )
+          return false;
       }
-    }
   return true;
 }
 
@@ -110,9 +87,7 @@ int main()
         else
           dontchange[i][j] = false;     // dont not change :)
       }
-    printboard(board);
     solveBoard( board, dontchange, 0, -1 );    // solve the board (start at 0,-1)
-    printboard(board);
     for ( int i = 0; i < 81; i++ )  // print to file
       fout << board[i/9][i%9];      // i/9 = row, i/9 = col
     fout << endl;
@@ -121,4 +96,3 @@ int main()
   fout.close();
   fin.close();
 }
-
