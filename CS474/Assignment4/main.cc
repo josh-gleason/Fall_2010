@@ -16,6 +16,8 @@ complex<double> exponential( complex<double> val )
 
 int main(int argc, char* argv[])
 {
+  // part 2
+
   for ( float YL = 0.2; YL <= 0.8; YL+=0.1 )
   for ( float YH = 1.2; YH <= 1.8; YH+=0.1 )
   {
@@ -32,6 +34,13 @@ int main(int argc, char* argv[])
     // step 3
     // 0.3 and 1.3 ? seem to be good 
     jdg::butterworth( filter, 1.8, 1.0, YL, YH );
+    //jdg::gaussian( filter, 1.8, 1, YL, YH );
+    //jdg::idealfilter( filter, 1.8, 1, YL, YH );
+
+    show = filter;
+    show *= 255.0 / YH;
+    show.show();
+
     a = a*filter;
     
     // step 4
@@ -42,7 +51,7 @@ int main(int argc, char* argv[])
 
     show = a;
     show.normalize( jdg::MINMAX_LOG, 0, 225 );
-    //show.show();
+    show.show();
 
     ostringstream sout;
     sout << "./images/girl_" << YL*10 << "_" << YH*10 << ".pgm";

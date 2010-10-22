@@ -60,9 +60,18 @@ void fft(float data[], unsigned long nn, int isign)
 namespace jdg
 {
 
-enum FilterType{ IDEAL=0, GAUSSIAN=1, BUTTERWORTH=2 };
+// 2D Fast Fourier Transform
 
-// the value for n should be negative for a highpass and positive for lowpass
+// val = 1 is forward, -1 is inverse
+template <class pType>
+void fft( Image<std::complex<pType> >& f, int val=1 );
+
+// convolution using convolution theorem (done in freq domain)
+template <class pType>
+void convolve( Image<std::complex<pType> >& img,
+  const Image<std::complex<pType> >& kernel, const PadWith=NEAREST );
+
+// the value for n should be positive for a highpass and positive for lowpass
 // D0    : cuttoff frequency (1pixel=1Hz)
 // n     : order             (higher means faster convergence)
 // gammaL: lower horizontal asymptote
@@ -71,16 +80,23 @@ template <class pType>
 void butterworth( jdg::Image<pType>& filter, float D0, float n=1.0,
   float gammaL=0.0, float gammaH=1.0 );
 
+// build a gaussian filter type > 0 for highpass and < 0 for lowpass
+// D0    : variance          (in pixels)
+// type  : high or low pass
+// gammaL: lower horizontal asymptote
+// gammaH: upper horizontal asymptote
 template <class pType>
-void buildLowPass( jdg::Image<pType>& filter, FilterType type, float cutoff1,
-  float cutoff2=0.0, float cutoff3=0.0, bool freq_domain=false );
+void gaussian( jdg::Image<pType>& filter, float D0, int type=1, float gammaL=0.0,
+  float gammaH=1.0 );
 
+// build an ideal filter type > 0 for highpass and < 0 for lowpass
+// D0    : cuttoff frequency (1pixel=1Hz)
+// type  : high or low pass
+// gammaL: lower horizontal asymptote
+// gammaH: upper horizontal asymptote
 template <class pType>
-void fft( Image<std::complex<pType> >& f, int val=1 );
-
-template <class pType>
-void convolve( Image<std::complex<pType> >& img,
-  const Image<std::complex<pType> >& kernel, const PadWith=NEAREST );
+void idealfilter( jdg::Image<pType>& filter, float D0, int type=1, float gammaL=0.0,
+  float gammaH=1.0 );
 
 template <class pType>
 void fft( Image<std::complex<pType> >& f, int val )
@@ -193,59 +209,74 @@ void butterworth( jdg::Image<pType>& filter, float D0, float n,
         stopX = -startX,
         stopY = -startY,
         D0_sqr = D0*D0,
-        diff = gammaH-gammaL;
+        diff = gammaH-gammaL,
+        yy;
 
   for ( float y = startY; y <= stopY; y+=1.0 )
+  {
+    yy = y*y;
     for ( float x = startX; x <= stopX; x+=1.0 )
-        if ( x != 0 && y != 0 )
-          filter(x-startX,y-startY) = gammaL + diff/(1+pow(D0_sqr/(x*x+y*y),n));
-        else if (n>0) // lowpass
-          filter(x-startX,y-startY) = gammaH;
-        else          // highpass
-          filter(x-startX,y-startY) = gammaL;
+      if ( x != 0 && y != 0 )
+        filter(x-startX,y-startY) = gammaL + diff/(1+pow(D0_sqr/(x*x+yy),n));
+      else if (n>0) // lowpass
+        filter(x-startX,y-startY) = gammaH;
+      else          // highpass
+        filter(x-startX,y-startY) = gammaL;
+  }
 }
 
 template <class pType>
-void buildLowPass( jdg::Image<pType>& filter, FilterType type, float param1,
-  float param2, float param3, bool freq_domain )
+void gaussian( jdg::Image<pType>& filter, float D0, int type, float gammaL,
+  float gammaH )
 {
-  //filter.resizeCanvas(512,512);
   int width = filter.getWidth();
   int height = filter.getHeight();
-
+  
   float startX = -(width-1) / 2.0,
-      startY = -(height-1) / 2.0,
-      stopX = -startX,
-      stopY = -startY;
-
-  param1 = param1 * 0.5*sqrt(width*width+height*height);
-
-  float param1_sqr = param1*param1;
+        startY = -(height-1) / 2.0,
+        stopX = -startX,
+        stopY = -startY,
+        D0_sqr2 = 2*D0*D0,
+        diff = gammaH-gammaL,
+        yy;
 
   for ( float y = startY; y <= stopY; y+=1.0 )
+  {
+    yy = y*y;
     for ( float x = startX; x <= stopX; x+=1.0 )
-      if ( type==IDEAL )
-      {
-        if ( sqrt(x*x+y*y) > param1 )
-          filter(x-startX,y-startY) = 0;
-        else
-          filter(x-startX,y-startY) = 1;
-      }
-      else if ( type==GAUSSIAN )
-      {
-        filter(x-startX,y-startY) = exp(-(0.5*x*x+0.5*y*y)/(param1_sqr));
-      }
-      else if ( type==BUTTERWORTH )
-      {
-        if ( x != 0 && y != 0 )
-          filter(x-startX,y-startY) = 1.0/(1.0+pow(param1_sqr/(x*x+y*y),param2));
-        else if (param2 > 0)
-          filter(x-startX,y-startY) = 1.0;
-        else
-          filter(x-startX,y-startY) = 0.0;
-      }
-  if ( !freq_domain )
-    jdg::fft( filter, -1 );
+      if ( type >= 0 ) // highpass
+        filter(x-startX,y-startY) = diff*(1-exp(-(x*x+yy)/D0_sqr2))+gammaL;
+      else            // lowpass
+        filter(x-startX,y-startY) = diff*exp(-(x*x+yy)/D0_sqr2)+gammaL;
+  }
+}
+
+template <class pType>
+void idealfilter( jdg::Image<pType>& filter, float D0, int type, float gammaL,
+  float gammaH )
+{
+  int width = filter.getWidth();
+  int height = filter.getHeight();
+  
+  float startX = -(width-1) / 2.0,
+        startY = -(height-1) / 2.0,
+        stopX = -startX,
+        stopY = -startY,
+        first = (type < 0 ? gammaH : gammaL),
+        second = (type < 0 ? gammaL : gammaH),
+        yy;
+
+
+  for ( float y = startY; y <= stopY; y+=1.0 )
+  {
+    yy = y*y;
+    for ( float x = startX; x <= stopX; x+=1.0 )
+      if ( sqrt(x*x+y*y) <= D0 )
+        filter(x-startX,y-startY) = first;
+      else
+        filter(x-startX,y-startY) = second;
+      
+  }
 }
 
 }
