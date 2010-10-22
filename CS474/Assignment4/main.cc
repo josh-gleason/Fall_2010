@@ -31,8 +31,7 @@ int main(int argc, char* argv[])
     
     // step 3
     // 0.3 and 1.3 ? seem to be good 
-    jdg::buildLowPass( filter, jdg::BUTTERWORTH, 1.8, YL, YH, true ); 
-
+    jdg::butterworth( filter, 1.8, 1.0, YL, YH );
     a = a*filter;
     
     // step 4
@@ -42,13 +41,14 @@ int main(int argc, char* argv[])
     a.callFunc( &exponential );
 
     show = a;
-    show.normalize( jdg::MINMAX_LOG, 0, 255 );
+    show.normalize( jdg::MINMAX_LOG, 0, 225 );
     //show.show();
 
     ostringstream sout;
     sout << "./images/girl_" << YL*10 << "_" << YH*10 << ".pgm";
     show.save(sout.str().c_str());
   }
+
   return 0;
 }
 

@@ -62,6 +62,15 @@ namespace jdg
 
 enum FilterType{ IDEAL=0, GAUSSIAN=1, BUTTERWORTH=2 };
 
+// the value for n should be negative for a highpass and positive for lowpass
+// D0    : cuttoff frequency (1pixel=1Hz)
+// n     : order             (higher means faster convergence)
+// gammaL: lower horizontal asymptote
+// gammaH: upper horizontal asymptote
+template <class pType>
+void butterworth( jdg::Image<pType>& filter, float D0, float n=1.0,
+  float gammaL=0.0, float gammaH=1.0 );
+
 template <class pType>
 void buildLowPass( jdg::Image<pType>& filter, FilterType type, float cutoff1,
   float cutoff2=0.0, float cutoff3=0.0, bool freq_domain=false );
@@ -173,6 +182,30 @@ void convolve( Image<std::complex<pType> >& img,
 }
 
 template <class pType>
+void butterworth( jdg::Image<pType>& filter, float D0, float n,
+  float gammaL, float gammaH )
+{
+  int width = filter.getWidth();
+  int height = filter.getHeight();
+  
+  float startX = -(width-1) / 2.0,
+        startY = -(height-1) / 2.0,
+        stopX = -startX,
+        stopY = -startY,
+        D0_sqr = D0*D0,
+        diff = gammaH-gammaL;
+
+  for ( float y = startY; y <= stopY; y+=1.0 )
+    for ( float x = startX; x <= stopX; x+=1.0 )
+        if ( x != 0 && y != 0 )
+          filter(x-startX,y-startY) = gammaL + diff/(1+pow(D0_sqr/(x*x+y*y),n));
+        else if (n>0) // lowpass
+          filter(x-startX,y-startY) = gammaH;
+        else          // highpass
+          filter(x-startX,y-startY) = gammaL;
+}
+
+template <class pType>
 void buildLowPass( jdg::Image<pType>& filter, FilterType type, float param1,
   float param2, float param3, bool freq_domain )
 {
@@ -185,7 +218,7 @@ void buildLowPass( jdg::Image<pType>& filter, FilterType type, float param1,
       stopX = -startX,
       stopY = -startY;
 
-  //param1 = param1 * 0.5*sqrt(width*width+height*height);
+  param1 = param1 * 0.5*sqrt(width*width+height*height);
 
   float param1_sqr = param1*param1;
 
@@ -205,7 +238,9 @@ void buildLowPass( jdg::Image<pType>& filter, FilterType type, float param1,
       else if ( type==BUTTERWORTH )
       {
         if ( x != 0 && y != 0 )
-          filter(x-startX,y-startY) = param2+param3/(1.0+param1*param1/((x*x+y*y)));
+          filter(x-startX,y-startY) = 1.0/(1.0+pow(param1_sqr/(x*x+y*y),param2));
+        else if (param2 > 0)
+          filter(x-startX,y-startY) = 1.0;
         else
           filter(x-startX,y-startY) = 0.0;
       }
