@@ -31,7 +31,8 @@ namespace jdg
 
 enum PadWith { ZEROS=0, NEAREST=1, WRAP=2, MIRROR=3 };
 
-enum NormType { MINMAX=0, MINMAX_LOG=1 };
+// L1 makes all sum to param1 in normalize function
+enum NormType { MINMAX=0, MINMAX_LOG=1, L1=2 };
 
 template <class pType>
 class Image
@@ -337,6 +338,19 @@ void Image<pType>::normalize( const NormType type, pType param1, pType param2 )
 
     for ( int i = _width * _height - 1; i >= 0; --i )
       _data[i] = ((_data[i] - min)*diff)/factor+param1;
+  }
+  else if ( type == L1 )
+  {
+    // get sum of everything
+    pType sum=_data[0];
+    for ( int i = _width * _height - 1; i >= 1; --i )
+      sum += _data[i];
+    if ( abs(sum) != 0 )
+    {
+      sum = pow(sum,-1) * param1;
+      for ( int i = _width * _height - 1; i >= 0; --i )
+        _data[i] *= sum;
+    }
   }
 }
 
