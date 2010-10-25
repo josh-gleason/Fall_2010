@@ -4,23 +4,26 @@
 The purpose of this paper is to propose a new design for a casino style video slot machine and
 attempt to resolve possible implementation issues.  The payback rate for the slot machine must
 be approximately 85\%.  This means that for every \$1.00 that a patron inserts into the machine,
-approximately \$0.85 will be returned.
+about \$0.85 will be returned.
 
 %Actual machine
 
 \section{Design}
 \subsection{Type of Machine}
 
-  The video slot machine industy has many types of slot machines, of these, three different
-categories will be considered.  The first type would be one that uses playing cards.  This type
-of machine uses a virtual deck to determine the card values, and then depending on some set of
-rules may pay back an amount based on the card types and/or values.  Another type of video slot
-considered here is the reel type slot machine.  These slot machines can consist of either
-physical or virtual reels with various symbols on them.  When these types of slots are played
-the reels spin for some random amount of time and then stop.  The payout is then somehow
-determined by the symbols that are visible on these reels.  The last category to be considered
-is the games where the player makes some sort of choice, and then lets the game continue until
-the round is complete.  If the player choose correctly then a payout is rewarded.
+Some factors to consider when deciding which type of slot machine to build are how much people enjoy games in the category, how difficult the odds are to calculate; especially after modifications to he game are made.  Another factor to consider is how much time, and how difficult implimentation may be.
 
-\subsection{Number of Reels}
+  The video slot machine industy has many types of slot machines, of these, three different categories will be considered.  The first type would be one that uses playing cards.  This type of machine uses a virtual deck to determine the card values, and then depending on some set of rules may pay back an amount based on the card types and/or values.  Another type of video slot considered here is the reel type slot machine.  These slot machines can consist of either physical or virtual reels with various symbols on them.  When these types of slots are played the reels spin for some random amount of time and then stop.  The payout is then somehow determined by the symbols that are visible on these reels.  The last category to be considered is the games where the player makes some sort of choice, and then lets the game continue until the round is complete.  If the player choose correctly then a payout is rewarded. 
+
+From personal observation, it seems that the most enjoyed slot games are reel slots and playing card slots. This is most likely the reason these two types of games exist with the greatest numbers.  However, it is also important to remember that not everybody that plays slots enjoys the same slot machines.  The second factor, having to do with calculating odds seems to be easiest for reel games.  Games with playing cards like blackjack can be very difficult to calculate true odds on.  For example when the book "Beat the Dealer" came out, it actually showed that the player could put the odds in their own favor simply by varying the bets.  By making sure that the deck is shufled between hands, the odds get much easier to calculate, so this is not a great concern.  Another issue with playing card games is that because they all have different rules, a great deal of research would be involved to determine what types of card games people like and dislike.  This could cause problems in the design phase because of the amount of deadline for the design phase.
+
+%Past tense, no I
+
+Because a reel type machine was choosen, a few key decisions had to be considered.  The first was the number of reel to be used in the machine.  The idea used to make this decision is that a slot machine with too many reels will confuse the player than they will lose interest quickely, while a slot with too few reels will be to simple and not give the player enough excitement.  Because of this, the ideal number of reels on the machine was choosen to be four.
+
+The next choice is to choose the number of credits allowed to play per hand.  While only allowing a single credit to play would turn away most players, allowing too many credits would turn away people who only play the maximum credits.  To determine the correct number of credits in the machine, a small verbal survey was conducted.  The survey asked the participants the following questions, "Would you be willing to play the maximum credits on a quarter machine if the maximum was X" where X was 3, 5, 7, and 10.  The number that most people stopped at was five, so the slot machine will allow a maximum of five credits payable.  As with most slot machines of this nature, a "maximum credits" bonus will be given so that playing the max bet will have a higher payout for the jackpot.
+
+Determining which symbols to use in on the reels is somewhat subjective, but these still must be choosen carefully to try and use something that will attract people.  For example, if the reels simply had simple numbers with no other values, most people would not be attracted to such a game.  To make things easier, all the symbols will belong to a group of objects, this group needs to be something that slot players associate with.  Obviously the thing that slot machine players have in common is that they like money, therefore the group of symbols will be derived from money.  However most successful slot machines also have a role playing theme as well, such as Ancient Egyptian king, or a game show contenstant.
+
+While three credits may be good, by making five credits playable those players only play maximum will still play, but the casino will make more money overall by having five.
 
