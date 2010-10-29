@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
     display = result_freq;
     display.save(imagename+"_7_freq.pgm");
     cout << imagename << "_7_freq.pgm Saved!" << endl;
-    
+   
     display = result_space;
     display.save(imagename+"_7_space.pgm");
     cout << imagename << "_7_space.pgm Saved!" << endl;
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
     // calculate error
     display -= result_freq; // difference
     display *= display;     // squared
-
+   
     // sum
     error = 0.0;
     for ( int i = 0; i < display.getWidth(); i++ )
