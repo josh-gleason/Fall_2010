@@ -71,6 +71,11 @@ template <class pType>
 void convolve( Image<std::complex<pType> >& img,
   const Image<std::complex<pType> >& kernel, const PadWith=NEAREST );
 
+// convolution using spacial domain (slow)
+template <class pType>
+void convolve_spacial( Image<pType>& img,
+  const Image<pType>& kernel, const PadWith=NEAREST );
+
 // the value for n should be positive for a highpass and positive for lowpass
 // D0    : cuttoff frequency (1pixel=1Hz)
 // n     : order             (higher means faster convergence)
@@ -198,6 +203,40 @@ void convolve( Image<std::complex<pType> >& img,
 
   // unpad the image back to original size ZEROS because it's efficient
   img.pad( origW, origH, jdg::ZEROS, -2*shiftX, -2*shiftY );
+}
+
+template <class pType>
+void convolve_spacial( Image<pType>& img,
+  const Image<pType>& kernel, const PadWith=NEAREST )
+{
+  int width = img.getWidth(),
+      height = img.getHeight(),
+      kernW = kernel.getWidth(),
+      kernH = kernel.getHeight();
+
+  int kernW_h = kernW/2,
+      kernH_h = kernH/2,
+      realX, realY;
+
+  Image<pType> retImg(width, height);
+
+  for ( int x = 0; x < width; x++ )
+  for ( int y = 0; y < height; y++ )
+  {
+    retImg(x,y) = 0;
+    for ( int kernX = 0; kernX < kernW; kernX++ )
+    for ( int kernY = 0; kernY < kernH; kernY++ )
+    {
+      realX = x-kernW_h+kernX;
+      realY = y-kernH_h+kernY;
+      if ( realX >= 0 && realY >= 0 && realX < width && realY < height )
+        retImg(x,y) = retImg(x,y) +
+          img( x-kernW_h+kernX, y-kernH_h+kernY ) *
+          kernel( kernW-kernX-1, kernH-kernY-1 );
+    }
+  }
+
+  img = retImg;
 }
 
 template <class pType>
