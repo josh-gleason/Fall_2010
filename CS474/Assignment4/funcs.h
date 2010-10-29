@@ -193,6 +193,9 @@ void convolve( Image<std::complex<pType> >& img,
   // invert fourier
   fft(img,-1);
 
+  // normalize back to value (this was divided out twice in the fft)
+  img *= img.getWidth() * img.getHeight();
+
   // unpad the image back to original size ZEROS because it's efficient
   img.pad( origW, origH, jdg::ZEROS, -2*shiftX, -2*shiftY );
 }

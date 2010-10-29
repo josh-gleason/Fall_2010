@@ -63,38 +63,14 @@ int main(int argc, char* argv[])
       gaussian7(i,j) = mask7[i*7+j];
 
   gaussian15.normalize( jdg::L1, 1.0 ); // normalize so sum = 1
-/*
-  double sum = 0;
-  for ( int i = 0; i < 15; i++ )
-  {
-    for ( int j = 0; j < 15; j++ )
-    {
-      cout << setprecision(2) << setw(7) << abs(gaussian15(i,j)) << ' ';
-      sum += abs(gaussian15(i,j));
-    }
-    cout << endl;
-  }
-  cout << sum << endl;*/
-//  gaussian7.normalize( jdg::L1, 1.0 );
+  gaussian7.normalize( jdg::L1, 1.0 );
 
   result = lenna;
  
-  int padW = gaussian15.getWidth()+lenna.getWidth()-1,
-      padH = gaussian15.getHeight()+lenna.getHeight()-1;
-
-  gaussian15.pad( padW, padH, jdg::ZEROS );
-  result.pad( padW, padH, jdg::ZEROS );
-
-  jdg::fft(gaussian15);
-  jdg::fft(result);
-
-  result *= gaussian15;
-
-  jdg::fft(result,-1);
-//  jdg::convolve( result, gaussian15, jdg::WRAP );
+  // convolve using frequency domain
+  jdg::convolve( result, gaussian15, jdg::WRAP );
 
   display = result;
-//  display.normalize( jdg::MINMAX, 0.0, 255.0 );
   cout << display.min() << endl;
   cout << display.max() << endl;
   display.show();

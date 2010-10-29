@@ -74,7 +74,7 @@ class Image
     void callFunc( A (*func)(B, int, int) );
 
     // normalize the image
-    void normalize( const NormType type, pType param1, pType param2 );
+    void normalize( const NormType type, pType param1, pType param2=255.0 );
 
     // pType must be primitive for load/save to work
     void load(const std::string& filename);
