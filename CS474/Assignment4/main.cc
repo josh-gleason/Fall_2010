@@ -23,25 +23,80 @@ int main(int argc, char* argv[])
   // part 1
 #ifdef PART1
   jdg::Image<complex<double> > lenna("images/girl.pgm");
-  jdg::Image<complex<double> > gaussian(40, 40);
+  jdg::Image<complex<double> > gaussian15(15,15);
+  jdg::Image<complex<double> > gaussian7(7,7);
+  jdg::Image<complex<double> > result;
   jdg::Image<double> display;
-  display = lenna;
-  display.show();
-  jdg::gaussian( gaussian, 20, -1, 0, 1 );
-  gaussian.normalize( jdg::L1, 1000000.0, 0.0 );
-  jdg::convolve( lenna, gaussian, jdg::ZEROS );
+ 
+  int mask15[] =
+    {2 ,2 ,3 ,4 ,5 ,5 ,6 ,6 ,6 ,5 ,5 ,4 ,3 ,2 ,2,
+     2 ,3 ,4 ,5 ,7 ,7 ,8 ,8 ,8 ,7 ,7 ,5 ,4 ,3 ,2,
+     3 ,4 ,6 ,7 ,9 ,10,10,11,10,10,9 ,7 ,6 ,4 ,3,
+     4 ,5 ,7 ,9 ,10,12,13,13,13,12,10,9 ,7 ,5 ,4,
+     5 ,7 ,9 ,11,13,14,15,16,15,14,13,11,9 ,7 ,5,
+     5 ,7 ,10,12,14,16,17,18,17,16,14,12,10,7 ,5,
+     6 ,8 ,10,13,15,17,19,19,19,17,15,13,10,8 ,6,
+     6 ,8 ,11,13,16,18,19,20,19,18,16,13,11,8 ,6,
+     6 ,8 ,10,13,15,17,19,19,19,17,15,13,10,8 ,6,
+     5 ,7 ,10,12,14,16,17,18,17,16,14,12,10,7 ,5,
+     5 ,7 ,9 ,11,13,14,15,16,15,14,13,11,9 ,7 ,5,
+     4 ,5 ,7 ,9 ,10,12,13,13,13,12,10,9 ,7 ,5 ,4,
+     3 ,4 ,6 ,7 ,9 ,10,10,11,10,10,9 ,7 ,6 ,4 ,3,
+     2 ,3 ,4 ,5 ,7 ,7 ,8 ,8 ,8 ,7 ,7 ,5 ,4 ,3 ,2,
+     2 ,2 ,3 ,4 ,5 ,5 ,6 ,6 ,6 ,5 ,5 ,4 ,3 ,2 ,2};
 
-  display = lenna;
-  cout << display.min() << ' ' << display.max() << endl;
-  //display.normalize( jdg::MINMAX, 0, 255 );
-  display.show();
+  int mask7[] =
+    {1 ,1 ,2 ,2 ,2 ,1 ,1,
+     1 ,2 ,2 ,4 ,2 ,2 ,1,
+     2 ,2 ,4 ,8 ,4 ,2 ,2,
+     2 ,4 ,8 ,16,8 ,4 ,2,
+     2 ,2 ,4 ,8 ,4 ,2 ,2,
+     1 ,2 ,2 ,4 ,2 ,2 ,1,
+     1 ,1 ,2 ,2 ,2 ,1 ,1};
+  
+  for ( int i = 0; i < 15; i++ )
+    for ( int j = 0; j < 15; j++ )
+      gaussian15(i,j) = mask15[i*15+j];
 
-  gaussian.resizeCanvas(15, 15);
-  jdg::gaussian( gaussian, 2.6, -1, 0, 1 );
-  gaussian.normalize( jdg::L1, 1.0, 0.0 );
-  jdg::convolve( lenna, gaussian );
+  for ( int i = 0; i < 7; i++ )
+    for ( int j = 0; j < 7; j++ )
+      gaussian7(i,j) = mask7[i*7+j];
 
-  display = lenna;
+  gaussian15.normalize( jdg::L1, 1.0 ); // normalize so sum = 1
+/*
+  double sum = 0;
+  for ( int i = 0; i < 15; i++ )
+  {
+    for ( int j = 0; j < 15; j++ )
+    {
+      cout << setprecision(2) << setw(7) << abs(gaussian15(i,j)) << ' ';
+      sum += abs(gaussian15(i,j));
+    }
+    cout << endl;
+  }
+  cout << sum << endl;*/
+//  gaussian7.normalize( jdg::L1, 1.0 );
+
+  result = lenna;
+ 
+  int padW = gaussian15.getWidth()+lenna.getWidth()-1,
+      padH = gaussian15.getHeight()+lenna.getHeight()-1;
+
+  gaussian15.pad( padW, padH, jdg::ZEROS );
+  result.pad( padW, padH, jdg::ZEROS );
+
+  jdg::fft(gaussian15);
+  jdg::fft(result);
+
+  result *= gaussian15;
+
+  jdg::fft(result,-1);
+//  jdg::convolve( result, gaussian15, jdg::WRAP );
+
+  display = result;
+//  display.normalize( jdg::MINMAX, 0.0, 255.0 );
+  cout << display.min() << endl;
+  cout << display.max() << endl;
   display.show();
 #endif // PART1
 
