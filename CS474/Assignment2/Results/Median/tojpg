@@ -1,0 +1,9 @@
+#!/bin/bash
+#converts all the .pgm images to .jpg images
+exten=.jpg
+
+for i in *.pgm
+  do
+    j=`echo $i | cut -d'.' -f1`
+    convert $i $j$exten
+  done

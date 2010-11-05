@@ -1,0 +1,122 @@
+\documentclass[11pt,a4paper,oneside]{article}
+
+\usepackage{amsmath}
+\usepackage{multirow}
+
+\begin{document}
+
+%title page%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{CS365 \\
+       Homework \#1}
+\date{August 30, 2010}
+
+\author{Joshua Gleason}
+
+\maketitle
+\thispagestyle{empty}
+
+\pagebreak
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Page 16}
+
+\begin{enumerate}
+\setcounter{enumi}{7}
+\item %8
+\begin{enumerate}
+\item If you have the flu, then you miss the final examination.
+\item You do not have the flu if and only if you pass the course.
+\item If you miss the final examination, then you will not pass the course.
+\item You have the flu, or you miss the examination, or you pass the course.
+\item If you have the flu then you will not pass the course, or if you miss the final examination then you will not pass the course.
+\item You have the flu and you miss the final examination, or you do not miss the final examination and you pass the course.
+\end{enumerate}
+
+\setcounter{enumi}{9}
+\item %10
+\begin{enumerate}
+\item \( r \wedge \neg q \)
+\item \( p \wedge q \wedge r \)
+\item \( r \rightarrow p \)
+\item \( p \wedge \neg q \wedge r \)
+\item \( r \leftrightarrow ( p \vee q ) \)
+\end{enumerate}
+
+\setcounter{enumi}{33}
+\item %34
+\hfill \\ %skip line
+\begin{center}
+\begin{tabular}{c | c | c | c | l}
+  p & q & r & s & \( ((p\rightarrow q)\rightarrow r)\rightarrow s\) \\
+  \hline
+  0 & 0 & 0 & 0 & 1 \\
+  0 & 0 & 0 & 1 & 1 \\
+  0 & 0 & 1 & 0 & 0 \\
+  0 & 0 & 1 & 1 & 1 \\
+  0 & 1 & 0 & 0 & 1 \\
+  0 & 1 & 0 & 1 & 1 \\
+  0 & 1 & 1 & 0 & 0 \\
+  0 & 1 & 1 & 1 & 1 \\
+  1 & 0 & 0 & 0 & 0 \\
+  1 & 0 & 0 & 1 & 1 \\
+  1 & 0 & 1 & 0 & 0 \\
+  1 & 0 & 1 & 1 & 1 \\
+  1 & 1 & 0 & 0 & 1 \\
+  1 & 1 & 0 & 1 & 1 \\
+  1 & 1 & 1 & 0 & 0 \\
+  1 & 1 & 1 & 1 & 1 \\
+
+\end{tabular}
+\end{center}
+
+\setcounter{enumi}{47}
+\item %48
+\begin{enumerate}
+\item \( r \wedge \neg p \)
+\item \( (r \wedge p ) \rightarrow q \)
+\item \( \neg r \rightarrow \neg q \)
+\item \( ( \neg p \wedge r ) \rightarrow q \)
+\end{enumerate}
+
+\end{enumerate}
+
+\section*{Page 28}
+\begin{enumerate}
+
+\setcounter{enumi}{13}
+\item \hfill \\ %14
+\begin{tabular}{r c l l}
+  \( ( \neg p \wedge (p \rightarrow q)) \rightarrow \neg q \) & \( \equiv \) & \( \neg( \neg p \wedge (p \rightarrow q) ) \vee \neg q \) & (From Table 7) \\
+  & \( \equiv \) & \( \neg( \neg p \wedge ( \neg p \vee q) ) \vee \neg q \) & (From Table 7) \\
+  & \( \equiv \) & \( (\neg (\neg p) \vee \neg(p \vee q)) \vee \neg q \) & (De Morgan's law) \\
+  & \( \equiv \) & \( (p \vee \neg(p \vee q)) \vee \neg q \) & (Double negation law) \\
+  & \( \equiv \) & \( (p \vee (\neg p \wedge \neg q)) \vee \neg q \) & (De Morgan's law) \\
+\end{tabular}
+
+Proposition can not be reduced further, therefore this is \textbf{not} a \textit{tautology}, it is a \textit{contingency}.
+
+\setcounter{enumi}{15}
+\item The propositions are true only when p and q are both positive, or both negative.
+
+\begin{center}
+\begin{tabular}{ c | c | c | l }
+  p & q & \( p \leftrightarrow q \) & \( (p \wedge q) \vee (\neg p \wedge q \neg) \) \\
+  \hline
+  0 & 0 & 1 & 1 \\
+  0 & 1 & 0 & 0 \\
+  1 & 0 & 0 & 0 \\
+  1 & 1 & 1 & 1 \\
+
+\end{tabular}
+\end{center}
+
+\setcounter{enumi}{39}
+\item %40
+\( p \wedge q \wedge \neg r \)
+
+\end{enumerate}
+
+\end{document}
+

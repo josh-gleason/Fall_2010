@@ -1,0 +1,3 @@
+#!/bin/bash
+./median Images/$1.pgm $2 50 Results/Median/$1\_median\_$2\_50.pgm Results/Median/$1\_mean\_$2\_50.pgm Results/Median/$1\_SP\_50.pgm
+./median Images/$1.pgm $2 75 Results/Median/$1\_median\_$2\_75.pgm Results/Median/$1\_mean\_$2\_75.pgm Results/Median/$1\_SP\_75.pgm

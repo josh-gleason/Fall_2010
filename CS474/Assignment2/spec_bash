@@ -1,0 +1,2 @@
+#!/bin/bash
+./spec Images/$1.pgm Images/$2.pgm Results/Specification/$1\_spec\_$2.pgm Results/Specification/$1\_spec\_$2\_histo.txt Results/Specification/$1\_histo.txt Results/Specification/$2\_histo.txt

@@ -1,0 +1,157 @@
+\documentclass[11pt,a4paper,oneside]{article}
+
+\usepackage{amsmath}
+\usepackage{multirow}
+
+\begin{document}
+
+%title page%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{CS365 \\
+       Homework \#2}
+\date{September 8, 2010}
+
+\author{Joshua Gleason}
+
+\maketitle
+\thispagestyle{empty}
+
+\pagebreak
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Page 46}
+
+\begin{enumerate}
+\setcounter{enumi}{5}
+\item %6
+\begin{enumerate} %a
+\item There exists a student in my school who has visited North Dakota.
+\setcounter{enumii}{2} %c
+\item There does not exist a student in my school who has visited North Dakota.
+\setcounter{enumii}{5} %f
+\item No students in my school have visited North Dakota.
+\end{enumerate}
+
+\setcounter{enumi}{11}
+\item %12
+\begin{enumerate}
+\setcounter{enumii}{3} %d and e
+\item \( \exists x Q(x) \) says that for some $x$, \( x+1 > 2x \).\\
+This statement is {\bf True}. (for example when $x = 0$)
+\item \( \forall x Q(x) \) says that for every $x$, \( x+1 > 2x \).\\
+This statement is {\bf False}. (for example when $x = 1$)
+\setcounter{enumii}{6} %g
+\item \( \forall x \neg Q(x) \) says that for every $x$, \( x+1 \leq 2x \).\\
+This statement is {\bf False}. (for example when $x = 0$)
+\end{enumerate}
+
+\setcounter{enumi}{23}
+\item \( F(x) : x \textup{ is in your class.} \) %24
+\begin{enumerate} %a
+\item \( G(x) : x \textup{ has a cellular phone.} \)
+\begin{enumerate}
+\item \( \forall x G(x) \)
+\item \( \forall x (F(x) \rightarrow G(x)) \)
+\end{enumerate}
+\setcounter{enumii}{2} %c
+\item \( H(x) : x \textup{ cannot swim.} \)
+\begin{enumerate}
+\item \( \exists x H(x) \)
+\item \( \exists x (F(x) \wedge H(x)) \)
+\end{enumerate}
+\setcounter{enumii}{4} %e
+\item \( I(x) : x \textup{ does not want to be rich.} \)
+\begin{enumerate}
+\item \( \exists x I(x) \)
+\item \( \exists x (F(x) \wedge I(x)) \)
+\end{enumerate}
+\end{enumerate}
+
+\newpage
+
+\setcounter{enumi}{31} %32
+\item
+\begin{enumerate} %a
+\item \( F(x) : x \textup{ has fleas.} \) \\
+      Domain of $x$ is all dogs
+\begin{enumerate}
+\item \(\forall x F(x) \)
+\item \(\exists x \neg F(x) \)
+\item There is a dog that does not have fleas.
+\end{enumerate} %b
+\item \( G(x) : x \textup{ can add.} \) \\
+      Domain of $x$ is all horses
+\begin{enumerate}
+\item \(\exists x G(x) \)
+\item \(\forall x \neg G(x) \)
+\item There are no horses that can add.
+\end{enumerate}
+\setcounter{enumii}{4} %e
+\item \( H(x) : x \textup{ can swim.} \) \\
+      \( I(x) : x \textup{ can catch fish.} \) \\
+      Domain of $x$ is all pigs.
+\begin{enumerate}
+\item \(\exists x (H(x) \wedge I(x)) \)
+\item \(\forall x (\neg H(x) \vee \neg I(x))\)
+\item There are no pigs that can catch fish and swim.
+\end{enumerate}
+\end{enumerate}
+
+\setcounter{enumi}{59}
+\item %60
+\begin{enumerate} %a, b, c, and d
+\item \( \forall x (P(x) \rightarrow Q(x)) \)
+\item \( \exists x (R(x) \wedge \neg Q(x)) \)
+\item \( \exists x (R(x) \wedge \neg P(x) \)
+\item Just because all clear explanations are satisfactory and some excuses are not satisfactory then there is no guarantee that an unclear excuse exist. {\bf No} (c) does not follow from (a) and (b).
+\end{enumerate}
+
+\end{enumerate}
+
+\section*{Page 58}
+\begin{enumerate}
+\setcounter{enumi}{9} %10
+\item
+\begin{enumerate}
+\setcounter{enumii}{2} %c
+\item \( \forall x \exists y F(x,y) \)
+\setcounter{enumii}{4} %e
+\item \( \forall y \exists x F(x,y) \)
+\setcounter{enumii}{9} %j
+\item \( \exists x \exists y ( ( x \neq y ) \wedge F(x,y) \wedge \forall z ((F(x,z) \wedge x \neq z ) \rightarrow ( z = y ) )) \)
+\end{enumerate}
+
+\setcounter{enumi}{19} %20
+\item
+\begin{enumerate} %a, b, c, and d
+\item \( \forall x \forall y ( ( (x < 0) \wedge (y < 0) ) \rightarrow ( x \times y > 0 ) ) \)
+\item \( \forall x \forall y ( ( (x > 0) \wedge (y > 0) ) \rightarrow ( \cfrac{x + y}{2} > 0 ) ) \)
+\item \( \neg \forall x \forall y ( ( (x < 0) \wedge (y < 0) ) \rightarrow ( x - y > 0 ) ) ) \)
+\item \( \forall x \forall y ( |x+y| \leq |x| + |y| ) \)
+\end{enumerate}
+
+\newpage
+
+\setcounter{enumi}{27} %28
+\item
+\begin{enumerate}
+\setcounter{enumii}{4} %e and f
+\item This reads... For every real number $x$ that is not zero, there exists another real number $y$ such that \( x \times y = 1\). This is {\bf True} because if \(x \times y = 1 \) then \( y = \cfrac{1}{x} \) which means $y$ exists as long as \( x \neq 0 \).
+\item This reads... There exists some real number $x$ that for every non-zero real number $y$ \( x \times y = 1 \). This is {\bf False} because there is no such number.
+\setcounter{enumii}{8} %i and j
+\item This reads... For every real number $x$ there exists a real number $y$ such that \( x + y = 2 \) and \( 2x-y=1 \). This is {\bf False} because there are numbers that exists where no real number can satisfy both of these equations.  For example if \( x = 2 \) then for \( x + y = 2 \), \( y = 0 \), but for \( 2x-y = 1 \), \( y = 3 \).
+\item This reads... For all real numbers $x$ and $y$ there exists another real number $z$ where \( z = \cfrac{x+y}{2} \).  This is {\bf True} because the expression \( \cfrac{x+y}{2} \) always evaluates to a real number given that $x$ and $y$ are also real numbers.
+\end{enumerate}
+
+\setcounter{enumi}{39} %40
+\item
+\begin{enumerate} %a, b, and c
+\item If \( x = 2 \) then \( y \textup{ must be equal to } \cfrac{1}{2} \), which is not an integer value.
+\item If \( x = -100 \) then \( y^2 - (-100) < 100 \) evaluates to \( y^2 < 0 \) which is not true for any integer values.
+\item If \( x = 1000 \) and \( y = 100 \) then \( x^2 = y^3 \), which means that for every $x$ and $y$ it is not true that \( x^2 \neq y^3 \).
+\end{enumerate}
+
+\end{enumerate}
+\end{document}
+

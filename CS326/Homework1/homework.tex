@@ -1,0 +1,86 @@
+\documentclass[11pt,a4paper,oneside]{article}
+
+\usepackage{amsmath}
+\usepackage{multirow}
+
+\usepackage{caption}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{courier}
+\lstset{
+  basicstyle=\footnotesize\ttfamily, % Standardschrift
+    %numbers=left,               % Ort der Zeilennummern
+    numberstyle=\tiny,          % Stil der Zeilennummern
+    %stepnumber=2,               % Abstand zwischen den Zeilennummern
+    numbersep=5pt,              % Abstand der Nummern zum Text
+    tabsize=2,                  % Groesse von Tabs
+    extendedchars=true,         %
+    breaklines=true,            % Zeilen werden Umgebrochen
+    keywordstyle=\color{red},
+    frame=b,         
+    %        keywordstyle=[1]\textbf,    % Stil der Keywords
+      %        keywordstyle=[2]\textbf,    %
+      %        keywordstyle=[3]\textbf,    %
+      %        keywordstyle=[4]\textbf,   \sqrt{\sqrt{}} %
+      stringstyle=\color{white}\ttfamily, % Farbe der String
+      showspaces=false,           % Leerzeichen anzeigen ?
+      showtabs=false,             % Tabs anzeigen ?
+      xleftmargin=17pt,
+    framexleftmargin=17pt,
+    framexrightmargin=5pt,
+    framexbottommargin=4pt,
+    %backgroundcolor=\color{lightgray},
+    showstringspaces=false      % Leerzeichen in Strings anzeigen ?        
+}
+\lstloadlanguages{% Check Dokumentation for further languages ...
+  %[Visual]Basic
+    %Pascal
+    %C
+    C++
+    %XML
+    %HTML
+    %Java
+}
+%\DeclareCaptionFont{blue}{\color{blue}} 
+
+%\captionsetup[lstlisting]{singlelinecheck=false, labelfont={blue}, textfont={blue}}
+\usepackage{caption}
+\DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{\colorbox[cmyk]{0.43, 0.35, 0.35,0.01}{\parbox{\textwidth}{\hspace{15pt}#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white, singlelinecheck=false, margin=0pt, font={bf,footnotesize}}
+\begin{document}
+
+%title page%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{CS326 \\
+       Homework \#1}
+\date{September 9, 2010}
+
+\author{Joshua Gleason}
+
+\maketitle
+\thispagestyle{empty}
+
+\pagebreak
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{enumerate}
+\item
+\begin{enumerate}
+\item \#included is not a recognized token, so it is detected by the scanner. 
+  \lstinputlisting{oneA.cc}
+\item The \texttt{cout} statement must be followed by a semicolon, this is a syntax error.  
+  \lstinputlisting{oneB.cc}
+\item The \texttt{main} function should return an \texttt{int}, but it is trying to return a \texttt{char*}.
+  \lstinputlisting{oneC.cc}
+\item The pointer is pointing to the null address, yet the program tries to de-reference it.  This causes
+  a dynamic semantic error.
+  \lstinputlisting{oneD.cc}
+\end{enumerate}
+
+
+\end{enumerate}
+
+\end{document}
+

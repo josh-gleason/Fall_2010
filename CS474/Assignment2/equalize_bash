@@ -1,0 +1,2 @@
+#!/bin/bash
+./equalize Images/$1.pgm Results/Equalization/$1\_equal.pgm Results/Equalization/$1\_equal\_histo.txt Results/Equalization/$1\_histo.txt
