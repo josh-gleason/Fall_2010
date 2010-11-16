@@ -1,19 +1,11 @@
-CC = g++
-CFLAGS = -Wall
-PROG = cube
+LIBS = -lglut -lGLU -lGL `pkg-config libpng --cflags --libs`
 
-SRCS = main.cpp imageloader.cpp
+main: main.cpp loadpng.o
+	g++ -Wall -o main main.cpp loadpng.o $(LIBS)
+	rm loadpng.o
 
-ifeq ($(shell uname),Darwin)
-	LIBS = -framework OpenGL -framework GLUT
-else
-	LIBS = -lglut -lGLU -lGL `pkg-config opencv --cflags --libs`
-endif
-
-all: $(PROG)
-
-$(PROG):	$(SRCS)
-	$(CC) $(CFLAGS) -o $(PROG) $(SRCS) $(LIBS)
+loadpng.o: loadpng.cpp loadpng.h
+	g++ -c loadpng.cpp $(LIBS)
 
 clean:
-	rm -f $(PROG)
+	rm -f main
