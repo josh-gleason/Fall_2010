@@ -24,6 +24,8 @@ float _spin_moment[3] = {0.0f, 0.0f, 0.0f};
 float _rot[2] = {0.0f, 0.0f};                 // rotation around x and y axis
 float _scale = 1.0f;                          //scaling of image
 GLuint _textureId;                            //The OpenGL id of the texture
+int _currentTex = 0; // 0 FruitBig.png, 1 FruitMedium.png, 2 FruitSmall.png
+string _textures[] = {"FruitBig.png", "FruitMedium.png", "FruitSmall.png"};
 
 void initRendering() {
   glEnable(GL_DEPTH_TEST);
@@ -35,7 +37,7 @@ void initRendering() {
   glEnable(GL_COLOR_MATERIAL);
   glClearColor(0.7f, 0.9f, 1.0f, 1.0f);
 
-  _textureId = loadImage("BigFruitNice.png");
+  _textureId = loadImage(_textures[_currentTex].c_str());
   glBindTexture(GL_TEXTURE_2D, _textureId);
 }
 
@@ -265,8 +267,14 @@ void handleKeypress(unsigned char key, int x, int y) {
     case 27: //Escape key
       exit(0);
       break;
-    case 'q':
+    case 'q': // spin
       spinReels();
+      break;
+    case 't': // change textures
+      _currentTex = (_currentTex + 1) % 3;
+      _textureId = loadImage(_textures[_currentTex].c_str());
+      glBindTexture(GL_TEXTURE_2D, _textureId);
+      glutPostRedisplay();
       break;
     case 'w': // rotate
       _rot[0] += 5;
