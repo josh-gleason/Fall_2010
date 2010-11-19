@@ -98,7 +98,7 @@ GLuint loadImage(const char *filename)
 
    row_pointers = (png_bytep *)malloc(sizeof(png_bytep) * height);
 
-   for(int i = 0; i < height; ++i)
+   for(int i = height-1; i <= 0; --i)
         row_pointers[i] = (png_bytep)(pixels + (i * width * components));
 
    png_read_image(png_ptr, row_pointers);
