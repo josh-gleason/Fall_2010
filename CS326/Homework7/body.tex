@@ -1,0 +1,115 @@
+%example
+%\lstinputlisting{code.c}
+
+\begin{enumerate}
+\item %1
+No, because macros in C are textural replacements done {\bf once} before the code is compiled.
+This means that something like the following...
+
+\vspace{20pt}
+{\tt \#define fact(a) (a <= 1 ? 1 : a*fact(a-1))}
+\vspace{20pt}
+
+  will not work because if {\tt fact(a)} is used somewhere in the code, it is just replaced with
+  the ternary expression which includes {\tt fact(a-1)}.  Because the substitution is only done
+  once, this ``new'' {\tt fact} will be undefined.
+
+\item %2
+\begin{enumerate}
+  \item %a
+    The local variable {\tt y} appears the retain its value because although the memory freed on
+    the stack, that same memory is then re-allocated when the function is called again.  Because
+    the stack is not modified between calls, the bit values remain in tact.
+  \item %b
+    If some variable makes use of the memory where {\tt y} was allocated, then when {\tt p()} is
+    called again, the first value of {\tt y} is lost.  For example...
+
+    \lstinputlisting{problem2.c}
+
+    The output for this code is...
+
+    \vspace{20pt}
+    {\tt 0 1065353216}
+    \vspace{20pt}
+
+\end{enumerate}
+
+\newpage
+
+\item %3
+{\tt
+\begin{verbatim}
+procedure swap(a,b)
+begin
+  temp := a
+  a := b
+  b := a
+end
+
+\end{verbatim}
+}
+\begin{enumerate}
+  \item
+    If the parameter passing is by value, then swap(a,b) swaps the temporary variables inside
+    the swap function, but these values are discarded when the function returns.  So after this
+    function executes, {\tt a} and {\tt b} have not changed.  In fact it is impossible to change
+    {\tt a} and {\tt b} during a function call, making a swap function impossible.
+  \item
+    If the parameter passing is by name, then swap(a,b) will work for non-array values.  However
+    suppose that swap(a,x[a]) is called.  In this case the actual names can be replaced inside
+    the swap function in order to simulate evaluation.
+{\tt
+
+\begin{verbatim}
+  temp := a
+  a := x[a]
+  x[a] := temp
+\end{verbatim}
+
+}
+
+  because {\tt a} has changed, {\tt x[a]} has also changed, so now {\tt x[a]} could be out of
+  bounds, or could be changing some other index.  Although special cases can be written to
+  fix this particular example.  Infinitely many more examples like this one exist with nested
+  subscripts.  Therefore it is impossible to write a swap function when parameters are passed
+  by name.
+\end{enumerate}
+
+\item %4
+
+\begin{enumerate}
+\item {\tt 11}
+
+  Because pass by value does not allow parameters to be changed, nothing happens to {\tt a[0]}
+  and {\tt a[1]} after during the function call to {\tt p()}.  Therefore the original value that
+  were assigned still hold.
+
+\item {\tt 31}
+  
+  When {\tt p()} is called with a[0] as both parameters, a reference to that location is held by
+  both {\tt x} and {\tt y}.  When {\tt x++} and {\tt y++} are executed, both increase the value
+  of {\tt a[0]}.  {\tt a[1]} is not changed in this function.
+
+\item
+  
+  When {\tt a[i]} is restored, is {\tt a[1]} now set to a value because i was increased?  In
+  that case the output is {\tt 12} because {\tt x} and {\tt y} are both {\tt 2} so whichever one
+  is returned doesn't matter because the value will be {\tt 2}.  The other ambiguity is whether
+  {\tt a[0]} gets ``restored'' or {\tt a[1]}.  If {\tt a[0]} is restored then the output is
+  {\tt 21}.
+
+\item {\tt 22}
+
+  When {\tt p()} is called here, {\tt x} and {\tt y} both reference the name {\tt a[i]}.  When
+  {\tt x++} is called i
+
+\end{enumerate}
+
+\item %5
+
+When using optional parameters, if the programmer specifies the values as literals, then the
+function call will be the same.  However if the optional parameters are filled with variables,
+an extra operation must be executed in order to obtain the value that the variable is holding.
+In the latter case, not specifying the values for the optional parameters is a bit faster.
+
+\end{enumerate}
