@@ -1,1 +1,2 @@
-['2_2.pl'].
+isSet([]).
+isSet([H|T]) :- not(member(H,T)), isSet(T).
