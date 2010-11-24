@@ -91,7 +91,9 @@ class Image
       int xoffset=0, int yoffset=0 );
 
     pType min() const;
+    pType min(int& x, int& y) const;
     pType max() const;
+    pType max(int& x, int& y) const;
 
     ////////////////////////////////////////////////////////////////////////////
     // accessor functions                                                     //
@@ -269,14 +271,32 @@ pType Image<pType>::min() const
 {
   int len = _width * _height;
 
-  pType* data = _data;
   pType val = *_data;
 
   for ( int i = 1; i < len; i++ )
   {
-    if (std::min(*data, val)==*data)
-      val = *data;
-    data++;
+    if (std::min(_data[i], val)==_data[i])
+      val = _data[i];
+  }
+  return val;
+}
+
+template <class pType>
+pType Image<pType>::min(int& x, int& y) const
+{
+  int len = _width * _height;
+
+  pType val = *_data;
+  x = y = 0;
+
+  for ( int i = 1; i < len; i++ )
+  {
+    if (std::min(_data[i], val)==_data[i])
+    {
+      val = _data[i];
+      x = i % _width;
+      y = i / _width;
+    }
   }
   return val;
 }
@@ -286,14 +306,32 @@ pType Image<pType>::max() const
 {
   int len = _width * _height;
 
-  pType* data = _data;
   pType val = *_data;
 
   for ( int i = 1; i < len; i++ )
   {
-    if (std::max(*data,val)==*data)
-      val = *data;
-    data++;
+    if (std::max(_data[i],val)==_data[i])
+      val = _data[i];
+  }
+  return val;
+}
+
+template <class pType>
+pType Image<pType>::max(int& x, int& y) const
+{
+  int len = _width * _height;
+
+  pType val = *_data;
+  x = y = 0;
+
+  for ( int i = 1; i < len; i++ )
+  {
+    if (std::max(_data[i],val)==_data[i])
+    {
+      val = _data[i];
+      x = i % _width;
+      y = i / _width;
+    }
   }
   return val;
 }
