@@ -19,12 +19,15 @@ struct Point
 template <class pType>
 void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size );
 
+template <class pType>
+double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 );
+
 int main(int argc, char* argv[])
 {
   jdg::Image<double> lenna((argc>2?argv[2]:"images/lenna.pgm"));
   jdg::Image<double> coefs, recons, show;
 
-  //lenna.show();
+  lenna.show();
 
   // create haar coeficient image in coefs
 
@@ -32,27 +35,36 @@ int main(int argc, char* argv[])
   
   // mess with coefs
 
-  const int size = coefs.getWidth()*coefs.getHeight()*(argc>1?atof(argv[1]):0.1);
-  Point<double> lst[size]; // = new Point<double>[size];
-  findLargest( coefs, lst, size );
-
-  jdg::Image<double> newimg(1,1);
-
-  // create blank image
-  newimg.pad(coefs.getWidth(), coefs.getHeight());
- 
-  newimg(0,0) = coefs(0,0); // this is not a coeficient, it must be there
-
-  for ( int i = 0; i < size; i++ )
-    if ( lst[i].x >= 0 || lst[i].y >= 0 )
-      newimg(lst[i].x, lst[i].y) = lst[i].val;
-
-  coefs = newimg;
+  int size = coefs.getWidth()*coefs.getHeight()*(argc>1?atof(argv[1]):0.1);
   
+  if ( size < coefs.getWidth()*coefs.getHeight()*1.0 )
+  {
+    Point<double>* lst = new Point<double>[size];
+    findLargest( coefs, lst, size );
+
+    jdg::Image<double> newimg(1,1);
+
+    // create blank image
+    newimg.pad(coefs.getWidth(), coefs.getHeight());
+   
+    // this is not a coefficient, it must be there
+    newimg(0,0) = coefs(0,0);
+
+    for ( int i = 0; i < size; i++ )
+      if ( lst[i].x >= 0 || lst[i].y >= 0 )
+        newimg(lst[i].x, lst[i].y) = lst[i].val;
+
+    coefs = newimg;
+  
+    // clean up
+    delete [] lst;
+  } 
   // reconstruct
 
   jdg::ihaarTransform(coefs,recons);
   
+  cout << mse(recons, lenna) << endl;
+
   // display results
 
   show = coefs;
@@ -61,10 +73,26 @@ int main(int argc, char* argv[])
   show.show();  
   recons.show();
 
-  // clean
-  //delete [] lst;
-
   return 0;
+}
+
+template <class pType>
+double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 )
+{
+  // assumes same width and height
+  int height = img1.getHeight();
+  int width = img2.getHeight();
+
+  double meanerr = 0.0;
+  pType diff;
+  for ( int x = 0; x < height; x++ )
+    for ( int y = 0; y < width; y++ )
+    {
+      diff = img1(x,y)-img2(x,y);
+      meanerr += diff*diff;
+    }
+  meanerr /= height*width;
+  return meanerr;
 }
 
 template <class pType>
