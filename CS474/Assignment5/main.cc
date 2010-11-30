@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
   jdg::Image<double> lenna((argc>2?argv[2]:"images/lenna.pgm"));
   jdg::Image<double> coefs, recons, show;
 
-  lenna.show();
+  //lenna.show();
 
   // create haar coeficient image in coefs
 
@@ -32,8 +32,8 @@ int main(int argc, char* argv[])
   
   // mess with coefs
 
-  int size = 20;//coefs.getWidth()*coefs.getHeight()*(argc>1?atof(argv[1]):0.1);
-  Point<double>* lst = new Point<double>[size];
+  const int size = coefs.getWidth()*coefs.getHeight()*(argc>1?atof(argv[1]):0.1);
+  Point<double> lst[size]; // = new Point<double>[size];
   findLargest( coefs, lst, size );
 
   jdg::Image<double> newimg(1,1);
@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
   recons.show();
 
   // clean
-  delete [] lst;
+  //delete [] lst;
 
   return 0;
 }
@@ -117,6 +117,7 @@ void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size )
           int min,max,mid;
           min = 0;
           max = len-1;
+          mid = (max+min)/2;
 
           // find location
           while ( abs(lst[mid].val) != abs(current.val) && min <= max )
