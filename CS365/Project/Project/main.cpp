@@ -21,7 +21,7 @@ const float REEL_START = 0.0125f;
 
 const float PAYLINE_THICKNESS = 0.09f;
 
-const float FRAME_DELAY = 8;
+const float FRAME_DELAY = 15;
 
 float _angle[3] = {0.0f,0.0f,0.0f};           //The rotation of each reel
 bool _spin_done[3] = {true,true,true};        //Flags to prevent double spinning
@@ -41,20 +41,25 @@ int reelvals[3] = {2,2,2};
 
 CRandomMother rndCls(time(0));
 
+void printConsole(int winnings=-1.0);
+
 // prints the console to the terminal window
-void printConsole()
+void printConsole(int winnings)
 {
-  cout << "\rCredits: " << total_credits << "     Bet: " << credits_played
-       << "     Current Payback: " << setprecision(4)
-       << (_credits_lost > 0?_credits_won * 100.0 / _credits_lost:0.0)
-       << "%           " << flush;
+ cout << "\rCredits: " << total_credits << "     Bet: " << credits_played
+      << "     Current Payback: " << setprecision(4)
+      << (_credits_lost > 0?_credits_won * 100.0 / _credits_lost:0.0)
+      << "%    ";
+ if ( winnings >= 0.0 )
+  cout << "   Won: " << winnings << "         ";
+ cout << flush;  // flush output buffer
 }
 
 // This function is called every time the reels finish spinning, 
 // if the index values indicate a winning combination then the
 // amount won is calculated and added to the total number of credits
 // This should ALWAYS zero out the credits_played variable
-void calcPayback( int reelIndex1, int reelIndex2, int reelIndex3 )
+int calcPayback( int reelIndex1, int reelIndex2, int reelIndex3 )
 {
   reelIndex1--;
   reelIndex2--;
@@ -87,6 +92,8 @@ void calcPayback( int reelIndex1, int reelIndex2, int reelIndex3 )
  if( _a == 1 && _b == 1 && _c == 1 )
  {
   credits_won = 500;
+  if ( credits_played >= 3 )  // bonus
+    credits_won *= 2;
  }
  // Rockstar = 200 (2,2,2)
  else if( _a == 2 && _b == 2 && _c == 2 )
@@ -152,16 +159,20 @@ void calcPayback( int reelIndex1, int reelIndex2, int reelIndex3 )
     }
  }
 
- // add payback to total number of credits
- total_credits += credits_won;
+ int winnings = credits_won * credits_played;
 
- _credits_won += credits_won; // running total of credits payed back
+ // add payback to total number of credits
+ total_credits += winnings;
+
+ _credits_won += winnings; // running total of credits payed back
  _credits_lost += credits_played; // keep track of total credits lost
- 
+
  // reset the credits played
  // Credits_played will return to 0 in case of loss so when the 
  // function increadseBet is called, credits_played will stay at 0.
  credits_played = 0;
+
+ return winnings;
 }
 
 // This function is called when the key is pressed that adds a
@@ -331,8 +342,8 @@ void spin_reel3(int value) {
   {
     _spin_done[2] = true;    // let others know the spin is complete
     // Final reel finished spinning, calculate Payback now
-    calcPayback(reelvals[0],reelvals[1],reelvals[2]);
-    printConsole();
+    int pay = calcPayback(reelvals[0],reelvals[1],reelvals[2]);
+    printConsole(pay);
   }
   else
   {
