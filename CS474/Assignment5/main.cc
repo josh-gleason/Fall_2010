@@ -5,6 +5,8 @@
 
 using namespace std;
 
+//#define DEBUG_MODE_JDG
+
 template <class pType>
 struct Point
 {
@@ -22,16 +24,22 @@ void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size );
 template <class pType>
 double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 );
 
+
 int main(int argc, char* argv[])
 {
   jdg::Image<double> lenna((argc>2?argv[2]:"images/lenna.pgm"));
   jdg::Image<double> coefs, recons, show;
 
+#ifndef DEBUG_MODE_JDG
   lenna.show();
+#endif
 
   // create haar coeficient image in coefs
 
-  jdg::haarTransform(lenna,coefs);
+  if ( argc > 3 && argv[3][0] != '0' )
+    jdg::daubechiesTransform(lenna,coefs);
+  else
+    jdg::haarTransform(lenna,coefs);
   
   // mess with coefs
 
@@ -61,7 +69,10 @@ int main(int argc, char* argv[])
   } 
   // reconstruct
 
-  jdg::ihaarTransform(coefs,recons);
+  if ( argc > 3 && argv[3][0] != '0' )
+    jdg::idaubechiesTransform(coefs,recons);
+  else
+    jdg::ihaarTransform(coefs,recons);
   
   cout << mse(recons, lenna) << endl;
 
@@ -70,8 +81,12 @@ int main(int argc, char* argv[])
   show = coefs;
   show.normalize( jdg::MINMAX_LOG, 0.0, 255.0 );
 
+  recons.normalize( jdg::MINMAX, 0.0, 255.0 );
+
+#ifndef DEBUG_MODE_JDG
   show.show();  
   recons.show();
+#endif
 
   return 0;
 }

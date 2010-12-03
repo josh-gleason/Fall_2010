@@ -107,6 +107,10 @@ template <class pType>
 void haarTransform( const jdg::Image<pType>& orig, jdg::Image<pType>& coef );
 template <class pType>
 void ihaarTransform( const jdg::Image<pType>& orig, jdg::Image<pType>& coef );
+template <class pType>
+void daubechiesTransform( const Image<pType>& img, Image<pType>& coefs );
+template <class pType>
+void idaubechiesTransform( const Image<pType>& img, Image<pType>& coefs );
 
 template <class pType>
 void fft( Image<std::complex<pType> >& f, int val )
@@ -313,7 +317,6 @@ void idealfilter( jdg::Image<pType>& filter, float D0, int type, float gammaL,
         second = (type < 0 ? gammaL : gammaH),
         yy;
 
-
   for ( float y = startY; y <= stopY; y+=1.0 )
   {
     yy = y*y;
@@ -428,6 +431,180 @@ void ihaarTransform( const jdg::Image<pType>& orig, jdg::Image<pType>& coef )
 
     dim *= 2;
   }
+
+}
+
+template <class pType>
+void daubechiesTransform( const Image<pType>& orig, Image<pType>& coef )
+{
+  static const double LP[4] = {0.482962913, 0.836516304, 0.224143868, -0.129409523};
+  static const double HP[4] = {-0.129409523, -0.224143868, 0.836516304, -0.482962913};
+
+  // move up to powers of two
+  int height = std::pow(2, std::ceil(log(orig.getHeight())/log(2)));
+  int width = std::pow(2, std::ceil(log(orig.getWidth())/log(2)));
+
+  int dim = std::max(height,width);
+
+  coef = orig;
+  
+  if ( orig.getHeight() != dim || orig.getWidth() != dim )
+    coef.pad(dim, dim);  // pad image with zeros to make power of 2
+  
+  jdg::Image<pType> temp = coef;
+
+  while ( dim >= 4 )
+  {
+    // all rows
+    pType one, two, three, four;
+    temp = coef;
+    int halfs = dim / 2;
+    for ( int row = 0; row < dim; row++ )
+    {
+      for ( int col = 0; col < dim; col+=2 )
+      {
+        one = temp(col,row);
+        two = temp(col+1,row);
+
+        if ( col+2 < dim )
+          three = temp(col+2,row);
+        else // wrap around
+          three = temp(0, row);
+
+        if ( col+3 < dim )
+          four = temp(col+3,row);
+        else // wrap
+          four = temp(1, row);
+
+        coef(col/2,row) = LP[0]*one+LP[1]*two+LP[2]*three+LP[3]*four; // lowpass
+        coef(col/2+halfs,row) = HP[0]*one+HP[1]*two+HP[2]*three+HP[3]*four; // highpass
+      }
+    }
+
+    // all cols
+    temp = coef;
+    for ( int col = 0; col < dim; col++ )
+      for ( int row = 0; row < dim; row+=2 )
+      {
+        one = temp(col,row);
+        two = temp(col,row+1);
+
+        if ( row+2 < dim )
+          three = temp(col,row+2);
+        else
+          three = temp(col,0);
+
+        if ( row+3 < dim )
+          four = temp(col,row+3);
+        else
+          four = temp(col,1);
+
+        coef(col,row/2) = LP[0]*one+LP[1]*two+LP[2]*three+LP[3]*four; // lowpass
+        coef(col,row/2+halfs) = HP[0]*one+HP[1]*two+HP[2]*three+HP[3]*four; // highpass
+      }
+
+    dim /= 2;
+  }
+
+}
+
+template <class pType>
+void idaubechiesTransform( const Image<pType>& orig, Image<pType>& coef )
+{
+  static const double LP[4] = {0.224143868, 0.836516304, 0.482962913, -0.129409523};
+  static const double HP[4] = {-0.129409523, -0.482962913, 0.836516304, -0.224143868};
+  
+  // move up to powers of two
+  int height = std::pow(2, std::ceil(log(orig.getHeight())/log(2)));
+  int width = std::pow(2, std::ceil(log(orig.getWidth())/log(2)));
+
+  int half=2, size = std::max(height,width);
+
+  coef = orig;
+
+  if ( orig.getHeight() != size || orig.getWidth() != size )
+    coef.pad(size, size, WRAP);  // pad image with zeros to make power of 2
+  
+  pType* temp = new pType[size];
+
+  while ( half < size )
+  {
+    int len = half*2;
+ 
+    // all cols
+    for ( int col = 0; col < len; col++ )
+    {
+      temp[0] = 
+        coef(col,half-1)*LP[0]+
+        coef(col,len-1)*LP[1]+
+        coef(col,0)*LP[2]+
+        coef(col,half)*LP[3];
+      
+      temp[1] = 
+        coef(col,half-1)*HP[0]+
+        coef(col,len-1)*HP[1]+
+        coef(col,0)*HP[2]+
+        coef(col,half)*HP[3];
+
+      int row_set = 2;
+      for ( int row = 0; row < half-1; row++ )
+      {
+        temp[row_set++] =
+          coef(col,row)*LP[0]+
+          coef(col,row+half)*LP[1]+
+          coef(col,row+1)*LP[2]+
+          coef(col,row+half+1)*LP[3];
+
+        temp[row_set++] =
+          coef(col,row)*HP[0]+
+          coef(col,row+half)*HP[1]+
+          coef(col,row+1)*HP[2]+
+          coef(col,row+half+1)*HP[3];
+      }
+
+      for ( int row = 0; row < len; row++ )
+        coef(col,row) = temp[row];
+    }
+
+    // all rows
+    for ( int row = 0; row < len; row++ )
+    {
+      temp[0] = 
+        coef(half-1,row)*LP[0]+
+        coef(len-1,row)*LP[1]+
+        coef(0,row)*LP[2]+
+        coef(half,row)*LP[3];
+      
+      temp[1] = 
+        coef(half-1,row)*HP[0]+
+        coef(len-1,row)*HP[1]+
+        coef(0,row)*HP[2]+
+        coef(half,row)*HP[3];
+
+      int col_set = 2;
+      for ( int col = 0; col < half-1; col++ )
+      {
+        temp[col_set++] =
+          coef(col,row)*LP[0]+
+          coef(col+half,row)*LP[1]+
+          coef(col+1,row)*LP[2]+
+          coef(col+half+1,row)*LP[3];
+
+        temp[col_set++] =
+          coef(col,row)*HP[0]+
+          coef(col+half,row)*HP[1]+
+          coef(col+1,row)*HP[2]+
+          coef(col+half+1,row)*HP[3];
+      }
+      
+      for ( int col = 0; col < len; col++ )
+        coef(col,row) = temp[col];
+    }
+    
+    half *= 2;
+  }
+
+  delete [] temp;
 
 }
 
