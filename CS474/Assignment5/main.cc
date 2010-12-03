@@ -5,8 +5,6 @@
 
 using namespace std;
 
-//#define DEBUG_MODE_JDG
-
 template <class pType>
 struct Point
 {
@@ -30,9 +28,7 @@ int main(int argc, char* argv[])
   jdg::Image<double> lenna((argc>2?argv[2]:"images/lenna.pgm"));
   jdg::Image<double> coefs, recons, show;
 
-#ifndef DEBUG_MODE_JDG
   lenna.show();
-#endif
 
   // create haar coeficient image in coefs
 
@@ -45,28 +41,7 @@ int main(int argc, char* argv[])
 
   int size = coefs.getWidth()*coefs.getHeight()*(argc>1?atof(argv[1]):0.1);
   
-  if ( size < coefs.getWidth()*coefs.getHeight()*1.0 )
-  {
-    Point<double>* lst = new Point<double>[size];
-    findLargest( coefs, lst, size );
-
-    jdg::Image<double> newimg(1,1);
-
-    // create blank image
-    newimg.pad(coefs.getWidth(), coefs.getHeight());
-   
-    // this is not a coefficient, it must be there
-    newimg(0,0) = coefs(0,0);
-
-    for ( int i = 0; i < size; i++ )
-      if ( lst[i].x >= 0 || lst[i].y >= 0 )
-        newimg(lst[i].x, lst[i].y) = lst[i].val;
-
-    coefs = newimg;
-  
-    // clean up
-    delete [] lst;
-  } 
+  // only calculate if size is less than 100% otherwise keep everything
   // reconstruct
 
   if ( argc > 3 && argv[3][0] != '0' )
@@ -74,8 +49,6 @@ int main(int argc, char* argv[])
   else
     jdg::ihaarTransform(coefs,recons);
   
-  cout << mse(recons, lenna) << endl;
-
   // display results
 
   show = coefs;
@@ -83,11 +56,12 @@ int main(int argc, char* argv[])
 
   recons.normalize( jdg::MINMAX, 0.0, 255.0 );
 
-#ifndef DEBUG_MODE_JDG
   show.show();  
-  recons.show();
-#endif
+  
+  cout << mse(recons, lenna) << endl;
 
+  recons.show();
+  
   return 0;
 }
 
@@ -189,3 +163,40 @@ void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size )
       } // end loop
 }
 
+// nonzero values of the mask are simply copied over to the output
+template <class pType>
+void keepLargest( const jdg::Image<pType>& img, double percentage, jdg::Image<pType>& output,
+  const jdg::Image<int>& mask )
+{
+  if ( percentage >= 1.0 )
+    return;
+
+  int width = img.getWidth(),
+      height = img.getHeight();
+  int size = width*height*percentage;
+
+  Point<pType>* lst = new Point<pType>[size];
+  findLargest( coefs, lst, size );
+
+  // clear output image
+  if ( output.getWidth() != img.getWidth() || output.getHeight() != img.getHeight() )
+    output.pad(coefs.getWidth(), coefs.getHeight());
+
+  // copy values over
+  for ( int x = 0; x < width; x++ )
+    for ( int y = 0; y < width; y++ )
+    {
+      if ( mask(x,y) == 0 )
+        output(x,y) = 0;
+      else
+        output(x,y) = img(x,y);
+    }
+
+  for ( int i = 0; i < size; i++ )
+    newimg(lst[i].x, lst[i].y) = lst[i].val;
+
+  coefs = newimg;
+
+  // clean up
+  delete [] lst;
+}
