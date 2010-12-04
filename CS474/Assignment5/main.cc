@@ -17,15 +17,13 @@ struct Point
 // find the 'size' largest points in the image and store in 'lst' which should
 // be pre-initialized to 'size' elements, ignores point (0,0)
 template <class pType>
-void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size,
-  const jdg::Image<int>& mask );
+void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size );
 
 template <class pType>
 double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 );
 
 template <class pType>
-void keepLargest( const jdg::Image<pType>& img, int count, jdg::Image<pType>& output,
-  const jdg::Image<int>& mask );
+void keepLargest( const jdg::Image<pType>& img, int count, jdg::Image<pType>& output );
 
 
 int main(int argc, char* argv[])
@@ -37,37 +35,19 @@ int main(int argc, char* argv[])
 
   // create haar coeficient image in coefs
 
-  jdg::Image<int> mask(1,1);
-
-  int height, width;
-
-  int mask_elems = 0;
 
   if ( argc > 3 && argv[3][0] != '0' )
-  {
     jdg::daubechiesTransform(lenna,all_coefs);
-    width = all_coefs.getWidth();
-    height = all_coefs.getHeight();
-    mask.pad(width, height, jdg::ZEROS);
-    mask(0,0) = 1;
-    mask(0,1) = 1;
-    mask(1,0) = 1;
-    mask(1,1) = 1;
-    mask_elems = 4;
-  }
   else
-  {
     jdg::haarTransform(lenna,all_coefs);
-    width = all_coefs.getWidth();
-    height = all_coefs.getHeight();
-    mask.pad(width, height, jdg::ZEROS);
-    mask(0,0) = 1;
-    mask_elems = 1;
-  }
+    
+  int width = all_coefs.getWidth(),
+      height = all_coefs.getHeight();
 
   // mess with coefs
 
-  int min = 0, max = width*height-mask_elems;
+  int min = 0,
+      max = width*height-1;
   int mid = (max+min)/2;
 
   double ideal = (argc>1?atof(argv[1]):5.0),
@@ -78,7 +58,7 @@ int main(int argc, char* argv[])
     mid = (max+min)/2;
 
     // keep largest
-    keepLargest( all_coefs, mid, coefs, mask );
+    keepLargest( all_coefs, mid, coefs );
 
     // reconstruct
     if ( argc > 3 && argv[3][0] != '0' )
@@ -103,7 +83,7 @@ int main(int argc, char* argv[])
   if ( mean_err > ideal )
   {
     mid+=1;
-    keepLargest( all_coefs, mid, coefs, mask );
+    keepLargest( all_coefs, mid, coefs );
   }
 
   // only calculate if size is less than 100% otherwise keep everything
@@ -153,7 +133,7 @@ double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 )
 }
 
 template <class pType>
-void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size, const jdg::Image<int>& mask )
+void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size )
 {
   int len=0;
 
@@ -163,7 +143,7 @@ void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size, co
 
   for ( int x = 0; x < width; x++ )
     for ( int y = 0; y < height; y++ )
-      if ( mask(x,y) == 0 )
+      if ( x != 0 || y != 0 )
       {
         current.x = x;
         current.y = y;
@@ -231,10 +211,8 @@ void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size, co
       } // end loop
 }
 
-// nonzero values of the mask are simply copied over to the output
 template <class pType>
-void keepLargest( const jdg::Image<pType>& img, int count, jdg::Image<pType>& output,
-  const jdg::Image<int>& mask )
+void keepLargest( const jdg::Image<pType>& img, int count, jdg::Image<pType>& output )
 {
   if ( count >= img.getWidth() * img.getHeight() )
     return;
@@ -243,7 +221,7 @@ void keepLargest( const jdg::Image<pType>& img, int count, jdg::Image<pType>& ou
       height = img.getHeight();
 
   Point<pType>* lst = new Point<pType>[count];
-  findLargest( img, lst, count, mask ); // make list of largest values
+  findLargest( img, lst, count ); // make list of largest values
 
   // clear output image
   if ( output.getWidth() != width || output.getHeight() != height )
@@ -252,12 +230,9 @@ void keepLargest( const jdg::Image<pType>& img, int count, jdg::Image<pType>& ou
   // copy values over
   for ( int x = 0; x < width; x++ )
     for ( int y = 0; y < width; y++ )
-    {
-      if ( mask(x,y) == 0 )
         output(x,y) = 0;
-      else
-        output(x,y) = img(x,y);
-    }
+
+  output(0,0) = img(0,0);
 
   // add largest back to output
   for ( int i = 0; i < count; i++ )
