@@ -5,8 +5,6 @@
 
 using namespace std;
 
-//#define DEBUG_MODE_JDG
-
 template <class pType>
 struct Point
 {
@@ -19,54 +17,96 @@ struct Point
 // find the 'size' largest points in the image and store in 'lst' which should
 // be pre-initialized to 'size' elements, ignores point (0,0)
 template <class pType>
-void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size );
+void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size,
+  const jdg::Image<int>& mask );
 
 template <class pType>
 double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 );
+
+template <class pType>
+void keepLargest( const jdg::Image<pType>& img, int count, jdg::Image<pType>& output,
+  const jdg::Image<int>& mask );
 
 
 int main(int argc, char* argv[])
 {
   jdg::Image<double> lenna((argc>2?argv[2]:"images/lenna.pgm"));
-  jdg::Image<double> coefs, recons, show;
+  jdg::Image<double> all_coefs, coefs, show, recons;
 
-#ifndef DEBUG_MODE_JDG
-  lenna.show();
-#endif
+  //lenna.show();
 
   // create haar coeficient image in coefs
 
+  jdg::Image<int> mask(1,1);
+
+  int height, width;
+
+  int mask_elems = 0;
+
   if ( argc > 3 && argv[3][0] != '0' )
-    jdg::daubechiesTransform(lenna,coefs);
+  {
+    jdg::daubechiesTransform(lenna,all_coefs);
+    width = all_coefs.getWidth();
+    height = all_coefs.getHeight();
+    mask.pad(width, height, jdg::ZEROS);
+    mask(0,0) = 1;
+    mask(0,1) = 1;
+    mask(1,0) = 1;
+    mask(1,1) = 1;
+    mask_elems = 4;
+  }
   else
-    jdg::haarTransform(lenna,coefs);
-  
+  {
+    jdg::haarTransform(lenna,all_coefs);
+    width = all_coefs.getWidth();
+    height = all_coefs.getHeight();
+    mask.pad(width, height, jdg::ZEROS);
+    mask(0,0) = 1;
+    mask_elems = 1;
+  }
+
   // mess with coefs
 
-  int size = coefs.getWidth()*coefs.getHeight()*(argc>1?atof(argv[1]):0.1);
+  int min = 0, max = width*height-mask_elems;
+  int mid = (max+min)/2;
+
+  double ideal = (argc>1?atof(argv[1]):5.0),
+         mean_err = 1;
   
-  if ( size < coefs.getWidth()*coefs.getHeight()*1.0 )
+  while ( max >= min )
   {
-    Point<double>* lst = new Point<double>[size];
-    findLargest( coefs, lst, size );
+    mid = (max+min)/2;
 
-    jdg::Image<double> newimg(1,1);
+    // keep largest
+    keepLargest( all_coefs, mid, coefs, mask );
 
-    // create blank image
-    newimg.pad(coefs.getWidth(), coefs.getHeight());
-   
-    // this is not a coefficient, it must be there
-    newimg(0,0) = coefs(0,0);
+    // reconstruct
+    if ( argc > 3 && argv[3][0] != '0' )
+      jdg::idaubechiesTransform(coefs,recons);
+    else
+      jdg::ihaarTransform(coefs,recons);
 
-    for ( int i = 0; i < size; i++ )
-      if ( lst[i].x >= 0 || lst[i].y >= 0 )
-        newimg(lst[i].x, lst[i].y) = lst[i].val;
+    // check mean square error
+    mean_err = mse(recons, lenna);
 
-    coefs = newimg;
+    cout << "MSE: " << mean_err
+         << "\tUsing " << (100.0*mid)/(width*height) << '%'
+         << "\t(" << mid << " pixels)" << endl;
+
+    if ( mean_err > ideal )
+      min = mid+1;  // use more coeffs
+    else
+      max = mid-1;  // use less coeffs
+  }
   
-    // clean up
-    delete [] lst;
-  } 
+  // use 1 more pixel to get over the ideal
+  if ( mean_err > ideal )
+  {
+    mid+=1;
+    keepLargest( all_coefs, mid, coefs, mask );
+  }
+
+  // only calculate if size is less than 100% otherwise keep everything
   // reconstruct
 
   if ( argc > 3 && argv[3][0] != '0' )
@@ -74,20 +114,22 @@ int main(int argc, char* argv[])
   else
     jdg::ihaarTransform(coefs,recons);
   
-  cout << mse(recons, lenna) << endl;
-
   // display results
+
+  cout << "\nFinal Results" << endl
+       << "MSE: " << mse(lenna, recons)
+       << "\tUsing " << (100.0*mid)/(width*height) << '%'
+       << "\t(" << mid << " pixels)" << endl;
 
   show = coefs;
   show.normalize( jdg::MINMAX_LOG, 0.0, 255.0 );
 
+  show.show();  
+
   recons.normalize( jdg::MINMAX, 0.0, 255.0 );
 
-#ifndef DEBUG_MODE_JDG
-  show.show();  
   recons.show();
-#endif
-
+  
   return 0;
 }
 
@@ -111,7 +153,7 @@ double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 )
 }
 
 template <class pType>
-void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size )
+void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size, const jdg::Image<int>& mask )
 {
   int len=0;
 
@@ -121,7 +163,7 @@ void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size )
 
   for ( int x = 0; x < width; x++ )
     for ( int y = 0; y < height; y++ )
-      if ( x != 0 || y != 0 ) // ignore (0,0)
+      if ( mask(x,y) == 0 )
       {
         current.x = x;
         current.y = y;
@@ -189,3 +231,38 @@ void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size )
       } // end loop
 }
 
+// nonzero values of the mask are simply copied over to the output
+template <class pType>
+void keepLargest( const jdg::Image<pType>& img, int count, jdg::Image<pType>& output,
+  const jdg::Image<int>& mask )
+{
+  if ( count >= img.getWidth() * img.getHeight() )
+    return;
+
+  int width = img.getWidth(),
+      height = img.getHeight();
+
+  Point<pType>* lst = new Point<pType>[count];
+  findLargest( img, lst, count, mask ); // make list of largest values
+
+  // clear output image
+  if ( output.getWidth() != width || output.getHeight() != height )
+    output.pad(width, height);
+
+  // copy values over
+  for ( int x = 0; x < width; x++ )
+    for ( int y = 0; y < width; y++ )
+    {
+      if ( mask(x,y) == 0 )
+        output(x,y) = 0;
+      else
+        output(x,y) = img(x,y);
+    }
+
+  // add largest back to output
+  for ( int i = 0; i < count; i++ )
+    output(lst[i].x, lst[i].y) = lst[i].val;
+
+  // clean up
+  delete [] lst;
+}
