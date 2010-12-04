@@ -2,8 +2,11 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <vector> 
 
 using namespace std;
+
+enum Wavelet { HAAR, DAUBECHIES };
 
 template <class pType>
 struct Point
@@ -14,103 +17,131 @@ struct Point
   pType val;
 };
 
+struct Settings
+{
+  string input, output;
+  double minErr;
+  Wavelet type;
+  bool showImages;
+  bool showProgress;
+  bool showResults;
+};
+
+const int DIVIDER = 18;
+
 // find the 'size' largest points in the image and store in 'lst' which should
 // be pre-initialized to 'size' elements, ignores point (0,0)
 template <class pType>
-void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size );
+void findLargest( jdg::Image<pType>& img, vector<Point<pType> >& lst, int size );
 
 template <class pType>
 double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 );
 
-template <class pType>
-void keepLargest( const jdg::Image<pType>& img, int count, jdg::Image<pType>& output );
+void readSettings( int argc, char* argv[], Settings& settings );
 
+template <class pType>
+int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double maxErr, Wavelet type, bool showProgress );
 
 int main(int argc, char* argv[])
 {
-  jdg::Image<double> lenna((argc>2?argv[2]:"images/lenna.pgm"));
-  jdg::Image<double> all_coefs, coefs, show, recons;
+  // read settings
+  Settings settings;
+  readSettings( argc, argv, settings );
+ 
+  // initialize variables
+  jdg::Image<double> img(settings.input);
+  jdg::Image<double> coefs, recons;
+ 
+  // show original image
+  if ( settings.showImages )
+    img.show();
 
-  //lenna.show();
+  // remove coefficients
+  int pixels =  // remove just enough to get the minimum desired error
+    removeCoefs( img, coefs, settings.minErr, settings.type, settings.showProgress );
 
-  // create haar coeficient image in coefs
-
-
-  if ( argc > 3 && argv[3][0] != '0' )
-    jdg::daubechiesTransform(lenna,all_coefs);
-  else
-    jdg::haarTransform(lenna,all_coefs);
-    
-  int width = all_coefs.getWidth(),
-      height = all_coefs.getHeight();
-
-  // mess with coefs
-
-  int min = 0,
-      max = width*height-1;
-  int mid = (max+min)/2;
-
-  double ideal = (argc>1?atof(argv[1]):5.0),
-         mean_err = 1;
-  
-  while ( max >= min )
-  {
-    mid = (max+min)/2;
-
-    // keep largest
-    keepLargest( all_coefs, mid, coefs );
-
-    // reconstruct
-    if ( argc > 3 && argv[3][0] != '0' )
-      jdg::idaubechiesTransform(coefs,recons);
-    else
-      jdg::ihaarTransform(coefs,recons);
-
-    // check mean square error
-    mean_err = mse(recons, lenna);
-
-    cout << "MSE: " << mean_err
-         << "\tUsing " << (100.0*mid)/(width*height) << '%'
-         << "\t(" << mid << " pixels)" << endl;
-
-    if ( mean_err > ideal )
-      min = mid+1;  // use more coeffs
-    else
-      max = mid-1;  // use less coeffs
-  }
-  
-  // use 1 more pixel to get over the ideal
-  if ( mean_err > ideal )
-  {
-    mid+=1;
-    keepLargest( all_coefs, mid, coefs );
-  }
-
-  // only calculate if size is less than 100% otherwise keep everything
   // reconstruct
-
-  if ( argc > 3 && argv[3][0] != '0' )
+  if ( settings.type != HAAR )
     jdg::idaubechiesTransform(coefs,recons);
-  else
+  else if ( settings.type == DAUBECHIES )
     jdg::ihaarTransform(coefs,recons);
   
-  // display results
+  // save results
+  if ( settings.output != "" )
+    recons.save(settings.output);
 
-  cout << "\nFinal Results" << endl
-       << "MSE: " << mse(lenna, recons)
-       << "\tUsing " << (100.0*mid)/(width*height) << '%'
-       << "\t(" << mid << " pixels)" << endl;
-
-  show = coefs;
-  show.normalize( jdg::MINMAX_LOG, 0.0, 255.0 );
-
-  show.show();  
-
-  recons.normalize( jdg::MINMAX, 0.0, 255.0 );
-
-  recons.show();
+  // display statistical results
+  if ( settings.showResults )
+    cout << "\nFinal Results" << endl
+         << "MSE: " << mse(img, recons)
+         << "\tUsing " << (100.0*pixels)/(img.getWidth()*img.getHeight()) << '%'
+         << "\t(" << pixels << " pixels)" << endl;
   
+  // show output image
+  if ( settings.showImages )
+    recons.show();
+
   return 0;
+}
+
+void readSettings( int argc, char* argv[], Settings& settings )
+{
+  // defaults
+  settings.input = "images/lenna.pgm";
+  settings.output = "";
+  settings.type = DAUBECHIES;
+  settings.minErr = 25.0;
+  settings.showImages = true;
+  settings.showProgress = true;
+  settings.showResults = true;
+
+  for ( int i = 0; i < argc; i++ )
+  {
+    if ( strcmp(argv[i],"-daubechies") == 0 )
+      settings.type = DAUBECHIES;
+    else if ( strcmp(argv[i],"-haar") == 0 )
+      settings.type = HAAR;
+    else if ( strcmp(argv[i],"-hideimages") == 0 )
+      settings.showImages = false;
+    else if ( strcmp(argv[i],"-hideprogress") == 0 )
+      settings.showProgress = false;
+    else if ( strcmp(argv[i],"-hideresults") == 0 )
+      settings.showResults = false;
+    else if ( strcmp(argv[i],"-hideall") == 0 )
+      settings.showImages =
+      settings.showProgress =
+      settings.showResults = false;
+    else if ( strcmp(argv[i],"-o") == 0 )
+    {
+      if ( argc > i )
+        settings.output = argv[++i];
+    }
+    else if ( strcmp(argv[i],"-i") == 0 )
+    {
+      if ( argc > i )
+        settings.input = argv[++i];
+    }
+    else if ( strcmp(argv[i],"-e") == 0 )
+    {
+      if ( argc > i )
+        settings.minErr = atof(argv[++i]);
+    }
+    else if ( strcmp(argv[i],"-help") == 0 )
+    {
+      cout << "Commands are ..." << endl
+           << "-daubechies        use daubechies wavelets (default)" << endl
+           << "-haar              use haar wavelets" << endl
+           << "-hideimages        don't display images    (shown by default)" << endl
+           << "-hideprogress      hide progress messages  (shown by default)" << endl
+           << "-hideresults       hide results statistics (shown by default)" << endl
+           << "-hideall           hide images,progress,results" << endl
+           << "-o FILENAME        save output file into file name" << endl
+           << "-i FILENAME        load image to compress  (default images/lenna.pgm)" << endl
+           << "-e FLOAT           specify max M.S.Error   (default 25.0)" << endl
+           << endl;
+      exit(0);
+    }
+  }
 }
 
 template <class pType>
@@ -133,9 +164,116 @@ double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 )
 }
 
 template <class pType>
-void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size )
+int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double maxErr,
+  Wavelet type, bool showProgress )
 {
-  int len=0;
+  int height = img.getHeight(),
+      width = img.getWidth();
+  int min = 0,
+      max = height * width - 1;
+  int mid=0;
+
+  pType uLeft;
+
+  double meanErr = 0.0;
+
+  // create list of points
+  vector<Point<pType> > lst;
+
+  // holds all the coeficients, then all the ones that are put into lst are removed
+  jdg::Image<pType> smallest(width,height), test(width,height);
+
+  // resize coefs if required
+  if ( coefs.getWidth() != width || coefs.getHeight() != height )
+    coefs.pad(width,height);
+
+  if ( type == HAAR )
+    jdg::haarTransform( img, smallest );
+  else  
+    jdg::daubechiesTransform( img, smallest );
+
+  uLeft = smallest(0,0);  // this needs to be in every image
+  smallest(0,0) = 0.0;    // make it so that it's not counted when looking for max
+
+  bool less = false;
+  
+  while ( max >= min )
+  {
+    if ( !less )
+      mid = min+(max-min)/DIVIDER;  // growning slowley because it's faster
+    else
+      mid = (min+max)/2;
+
+    findLargest( smallest, lst, mid );
+
+    for ( int x = 0; x < width; x++ )
+      for ( int y = 0; y < height; y++ )
+        coefs(x,y) = 0.0;
+
+    for ( int i = 0; i < mid; i++ )
+      coefs(lst[i].x, lst[i].y) = lst[i].val;
+    
+    coefs(0,0) = uLeft;
+      
+    if ( type == HAAR )
+      jdg::ihaarTransform( coefs, test );
+    else  
+      jdg::idaubechiesTransform( coefs, test );
+
+    meanErr = mse(test, img);
+
+    if ( showProgress )
+      cout << "MSE: " << meanErr
+           << "\tUsing " << (100.0*mid)/(width*height) << '%'
+           << "\t(" << mid << " pixels)" << endl;
+    
+    if ( meanErr > maxErr )
+      min = mid+1;  // use more coeffs
+    else
+    {
+      max = mid-1;  // use less coeffs
+      less = true;
+    }
+  }
+
+  // in case it converges one to low
+  if ( meanErr > maxErr )
+  {
+    mid++;
+    if ( mid > (int)lst.size() )
+    {
+      findLargest( smallest, lst, mid );
+    
+      for ( int x = 0; x < width; x++ )
+        for ( int y = 0; y < height; y++ )
+          coefs(x,y) = 0.0;
+
+      for ( int i = 0; i < mid; i++ )
+        coefs(lst[i].x, lst[i].y) = lst[i].val;
+      
+      coefs(0,0) = uLeft;
+
+    }
+    else  // more likely
+      coefs(lst[mid-1].x, lst[mid-1].y) = lst[mid-1].val;
+  }
+
+  return mid;
+}
+
+
+template <class pType>
+void findLargest( jdg::Image<pType>& img, vector<Point<pType> >& lst, int size )
+{
+  int len;
+  if ( (int)lst.size() < size )
+  {
+    len = (int)lst.size();
+    lst.resize(size);
+  }
+  else  // already sorted
+    return;
+
 
   Point<pType> current, temp;
   int height = img.getHeight(),
@@ -143,7 +281,7 @@ void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size )
 
   for ( int x = 0; x < width; x++ )
     for ( int y = 0; y < height; y++ )
-      if ( x != 0 || y != 0 )
+      if ( img(x,y) != 0 )
       {
         current.x = x;
         current.y = y;
@@ -209,35 +347,8 @@ void findLargest( const jdg::Image<pType>& img, Point<pType> lst[], int size )
           }
         }
       } // end loop
+  // remove values from img
+  for ( int i = 0; i < size; i++ )
+    img(lst[i].x, lst[i].y) = 0;
 }
 
-template <class pType>
-void keepLargest( const jdg::Image<pType>& img, int count, jdg::Image<pType>& output )
-{
-  if ( count >= img.getWidth() * img.getHeight() )
-    return;
-
-  int width = img.getWidth(),
-      height = img.getHeight();
-
-  Point<pType>* lst = new Point<pType>[count];
-  findLargest( img, lst, count ); // make list of largest values
-
-  // clear output image
-  if ( output.getWidth() != width || output.getHeight() != height )
-    output.pad(width, height);
-
-  // copy values over
-  for ( int x = 0; x < width; x++ )
-    for ( int y = 0; y < width; y++ )
-        output(x,y) = 0;
-
-  output(0,0) = img(0,0);
-
-  // add largest back to output
-  for ( int i = 0; i < count; i++ )
-    output(lst[i].x, lst[i].y) = lst[i].val;
-
-  // clean up
-  delete [] lst;
-}
