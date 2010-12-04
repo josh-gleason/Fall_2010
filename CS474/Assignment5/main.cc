@@ -21,6 +21,8 @@ struct Settings
 {
   string input, output;
   double minErr;
+  int pixels;
+  double percentage;
   Wavelet type;
   bool showImages;
   bool showProgress;
@@ -42,6 +44,10 @@ void readSettings( int argc, char* argv[], Settings& settings );
 template <class pType>
 int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double maxErr, Wavelet type, bool showProgress );
 
+template <class pType>
+void removeExactCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, int pixels,
+  Wavelet type );
+
 int main(int argc, char* argv[])
 {
   // read settings
@@ -57,15 +63,23 @@ int main(int argc, char* argv[])
     img.show();
 
   // remove coefficients
-  int pixels =  // remove just enough to get the minimum desired error
-    removeCoefs( img, coefs, settings.minErr, settings.type, settings.showProgress );
+  if ( settings.pixels > 0 )
+    removeExactCoefs( img, coefs, settings.pixels, settings.type );
+  else if ( settings.percentage > 0.0 )
+  {
+    settings.pixels = settings.percentage*(img.getHeight()*img.getWidth()-1.0);
+    removeExactCoefs( img, coefs, settings.pixels, settings.type );
+  }
+  else // remove just enough to get the minimum desired error
+    settings.pixels =
+      removeCoefs( img, coefs, settings.minErr, settings.type, settings.showProgress );
 
   // reconstruct
-  if ( settings.type != HAAR )
+  if ( settings.type == DAUBECHIES )
     jdg::idaubechiesTransform(coefs,recons);
-  else if ( settings.type == DAUBECHIES )
+  else if ( settings.type == HAAR )
     jdg::ihaarTransform(coefs,recons);
-  
+
   // save results
   if ( settings.output != "" )
     recons.save(settings.output);
@@ -74,8 +88,8 @@ int main(int argc, char* argv[])
   if ( settings.showResults )
     cout << "\nFinal Results" << endl
          << "MSE: " << mse(img, recons)
-         << "\tUsing " << (100.0*pixels)/(img.getWidth()*img.getHeight()) << '%'
-         << "\t(" << pixels << " pixels)" << endl;
+         << "\tUsing " << (100.0*settings.pixels)/(img.getWidth()*img.getHeight()-1.0) << '%'
+         << "\t(" << settings.pixels << " coefficients)" << endl;
   
   // show output image
   if ( settings.showImages )
@@ -91,6 +105,8 @@ void readSettings( int argc, char* argv[], Settings& settings )
   settings.output = "";
   settings.type = DAUBECHIES;
   settings.minErr = 25.0;
+  settings.pixels = -1;
+  settings.percentage = -1.0;
   settings.showImages = true;
   settings.showProgress = true;
   settings.showResults = true;
@@ -121,23 +137,37 @@ void readSettings( int argc, char* argv[], Settings& settings )
       if ( argc > i )
         settings.input = argv[++i];
     }
-    else if ( strcmp(argv[i],"-e") == 0 )
+    else if ( strcmp(argv[i],"-error") == 0 )
     {
       if ( argc > i )
         settings.minErr = atof(argv[++i]);
     }
+    else if ( strcmp(argv[i],"-pixels") == 0 )
+    {
+      if ( argc > i )
+        settings.pixels = atoi(argv[++i]);
+    }
+    else if ( strcmp(argv[i],"-percentage") == 0 )
+    {
+      if ( argc > i )
+        settings.percentage = atof(argv[++i])/100.0;
+    }
     else if ( strcmp(argv[i],"-help") == 0 )
     {
       cout << "Commands are ..." << endl
-           << "-daubechies        use daubechies wavelets (default)" << endl
-           << "-haar              use haar wavelets" << endl
-           << "-hideimages        don't display images    (shown by default)" << endl
-           << "-hideprogress      hide progress messages  (shown by default)" << endl
-           << "-hideresults       hide results statistics (shown by default)" << endl
-           << "-hideall           hide images,progress,results" << endl
-           << "-o FILENAME        save output file into file name" << endl
-           << "-i FILENAME        load image to compress  (default images/lenna.pgm)" << endl
-           << "-e FLOAT           specify max M.S.Error   (default 25.0)" << endl
+           << "\t-hideimages        don't display images    (shown by default)" << endl
+           << "\t-hideprogress      hide progress messages  (shown by default)" << endl
+           << "\t-hideresults       hide results statistics (shown by default)" << endl
+           << "\t-hideall           hide images,progress,results" << endl
+           << "\t-o FILENAME        save output file into file name" << endl
+           << "\t-i FILENAME        load image to compress  (default images/lenna.pgm)\n"
+           << "\nUse only one of the following (default -error 25.0)" << endl
+           << "\t-error FLOAT       specify max M.S.Error" << endl
+           << "\t-pixels INT        specify exact number of coeficients" << endl
+           << "\t-percentage FLOAT  specify exact percentage of pixel coeficients" << endl
+           << "\nUse only one of the following (default -daubechies)" << endl
+           << "\t-daubechies        use daubechies wavelets (default)" << endl
+           << "\t-haar              use haar wavelets" << endl
            << endl;
       exit(0);
     }
@@ -161,6 +191,51 @@ double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 )
     }
   meanerr /= height*width;
   return meanerr;
+}
+
+template <class pType>
+void removeExactCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, int pixels,
+  Wavelet type )
+{
+  int height = img.getHeight(),
+      width = img.getWidth();
+  
+  // create list of points
+  vector<Point<pType> > lst;
+
+  // holds all the coeficients, then all the ones that are put into lst are removed
+  jdg::Image<pType> smallest(width,height);
+
+  // resize coefs if required
+  if ( coefs.getWidth() != width || coefs.getHeight() != height )
+    coefs.pad(width,height);
+
+  // wavelet transform
+  if ( type == HAAR )
+    jdg::haarTransform( img, coefs );
+  else  
+    jdg::daubechiesTransform( img, coefs );
+    
+  if ( pixels >= height*width-1 )
+    return; // don't need to remove any :p
+
+  // remove the top left because it is not a coefficient
+  pType uLeft = coefs(0,0);
+  coefs(0,0) = 0;
+
+  // find the largest pixels
+  findLargest( coefs, lst, pixels );
+
+  // clear the image and put only the largest pixels in
+  for ( int x = 0; x < width; x++ )
+    for ( int y = 0; y < height; y++ )
+      coefs(x,y) = 0.0;
+
+  for ( int i = 0; i < pixels; i++ )
+    coefs(lst[i].x, lst[i].y) = lst[i].val;
+
+  // don't forget this one!
+  coefs(0,0) = uLeft;
 }
 
 template <class pType>
@@ -224,7 +299,7 @@ int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double 
 
     if ( showProgress )
       cout << "MSE: " << meanErr
-           << "\tUsing " << (100.0*mid)/(width*height) << '%'
+           << "\tUsing " << (100.0*mid)/(width*height-1.0) << '%'
            << "\t(" << mid << " pixels)" << endl;
     
     if ( meanErr > maxErr )
