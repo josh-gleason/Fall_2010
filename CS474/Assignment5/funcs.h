@@ -453,7 +453,7 @@ void daubechiesTransform( const Image<pType>& orig, Image<pType>& coef )
   
   jdg::Image<pType> temp = coef;
 
-  while ( dim >= 4 )
+  while ( dim >= 2 )
   {
     // all rows
     pType one, two, three, four;
@@ -526,6 +526,31 @@ void idaubechiesTransform( const Image<pType>& orig, Image<pType>& coef )
     coef.pad(size, size, WRAP);  // pad image with zeros to make power of 2
   
   pType* temp = new pType[size];
+
+  // special case for first ones
+  //col 0
+  temp[0] = coef(0,0)*(LP[0]+LP[2])+coef(0,1)*(LP[1]+LP[3]);
+  temp[1] = coef(0,0)*(HP[0]+HP[2])+coef(0,1)*(HP[1]+HP[3]);
+  coef(0,0) = temp[0];
+  coef(0,1) = temp[1];
+  
+  //col 1
+  temp[0] = coef(1,0)*(LP[0]+LP[2])+coef(1,1)*(LP[1]+LP[3]);
+  temp[1] = coef(1,0)*(HP[0]+HP[2])+coef(1,1)*(HP[1]+HP[3]);
+  coef(1,0) = temp[0];
+  coef(1,1) = temp[1];
+
+  //row 0
+  temp[0] = coef(0,0)*(LP[0]+LP[2])+coef(1,0)*(LP[1]+LP[3]);
+  temp[1] = coef(0,0)*(HP[0]+HP[2])+coef(1,0)*(HP[1]+HP[3]);
+  coef(0,0) = temp[0];
+  coef(1,0) = temp[1];
+  
+  //row 1
+  temp[0] = coef(0,1)*(LP[0]+LP[2])+coef(1,1)*(LP[1]+LP[3]);
+  temp[1] = coef(0,1)*(HP[0]+HP[2])+coef(1,1)*(HP[1]+HP[3]);
+  coef(0,1) = temp[0];
+  coef(1,1) = temp[1];
 
   while ( half < size )
   {
