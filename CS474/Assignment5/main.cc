@@ -29,7 +29,7 @@ struct Settings
   bool showResults;
 };
 
-const int DIVIDER = 18;
+const int DIVIDER = 17;
 
 // find the 'size' largest points in the image and store in 'lst' which should
 // be pre-initialized to 'size' elements, ignores point (0,0)
@@ -275,7 +275,7 @@ int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double 
   while ( max >= min )
   {
     if ( !less )
-      mid = min+(max-min)/DIVIDER;  // growning slowley because it's faster
+      mid = min+(max-min)/DIVIDER;  // growing slowley because it's faster :P
     else
       mid = (min+max)/2;
 
