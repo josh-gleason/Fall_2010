@@ -1,12 +1,10 @@
 #include "funcs.h"
+#include "filters.h"
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-#include <vector> 
 
 using namespace std;
-
-enum Wavelet { HAAR, DAUBECHIES };
 
 template <class pType>
 struct Point
@@ -29,71 +27,38 @@ struct Settings
   bool showResults;
 };
 
-template <class pType>
-struct Filters
-{
-  Filters() : D2(2), D4(4), D6(6), D8(8), D10(10)
-  {
-    D2[0] = 0.707106781,
-    D2[1] = 0.707106781;
-
-    D4[0] = 0.482962913,
-    D4[1] = 0.836516304,
-    D4[2] = 0.224143868,
-    D4[3] = -0.129409523;
-
-    D6[0] = 0.332670555,
-    D6[1] = 0.806891512,
-    D6[2] = 0.459877502,
-    D6[3] = -0.135011023,
-    D6[4] = -0.085441275,
-    D6[5] = 0.035226292;
-    
-    D8[0] = 0.230377814686837;
-    D8[1] = 0.714846574023517;
-    D8[2] = 0.630881660124131;
-    D8[3] = -0.0279837720786611;
-    D8[4] = -0.187034813579463;
-    D8[5] = 0.0308413815002668;
-    D8[6] = 0.0328830109095867;
-    D8[7] = -0.010597402258575;
-
-    D10[0] = 0.160102396147341;
-    D10[1] = 0.603829267884446;
-    D10[2] = 0.724308525426066;
-    D10[3] = 0.138428144948276;
-    D10[4] = -0.242294883260072;
-    D10[5] = -0.0322448682527693;
-    D10[6] = 0.0775714877291344;
-    D10[7] = -0.00624149013617742;
-    D10[8] = -0.0125807519269895;
-    D10[9] = 0.00333572527906182;
-  }
-
-  vector<pType> D2,D4,D6,D8,D10;
-};
-
 const int DIVIDER = 17;
 
 // define the filters
 const Filters<double> FILTERS;
 
-// find the 'size' largest points in the image and store in 'lst' which should
-// be pre-initialized to 'size' elements, ignores point (0,0)
-template <class pType>
-void findLargest( jdg::Image<pType>& img, vector<Point<pType> >& lst, int size );
-
-template <class pType>
-double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 );
+// Function Prototypes
 
 void readSettings( int argc, char* argv[], Settings& settings );
 
+// Finds the largest values in the image and places them in lst, once found the values
+// are SET TO ZERO in img.  If more space is needed for lst then it is resized, lst assumes
+// that any values are already sorted inside of it so the first pass it should be passed
+// with size = 0
+template <class pType>
+void findLargest( jdg::Image<pType>& img, vector<Point<pType> >& lst, int size );
+
+// returns the mean square error between the two images
+template <class pType>
+double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 );
+
+// removes the most coefficients possible to maintain the mean square error less than maxErr
+// coefs will contain the image in the wavelet domain (before inverse)
 template <class pType>
 int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double maxErr, Wavelet type, bool showProgress );
 
+// simply removes 'pixels' number of coeficients from the wavelet transform of img
+// coefs will contain the image in the wavelet domain (before inverse)
 template <class pType>
 void removeExactCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, int pixels,
   Wavelet type );
+
+// Main
 
 int main(int argc, char* argv[])
 {
@@ -122,10 +87,7 @@ int main(int argc, char* argv[])
       removeCoefs( img, coefs, settings.minErr, settings.type, settings.showProgress );
 
   // reconstruct
-  if ( settings.type == DAUBECHIES )
-    jdg::iwaveletTrans(coefs,recons, FILTERS.D10 );
-  else if ( settings.type == HAAR )
-    jdg::iwaveletTrans(coefs,recons, FILTERS.D2 );
+  jdg::iwaveletTrans(coefs,recons, FILTERS(settings.type) );
 
   // save results
   if ( settings.output != "" )
@@ -145,12 +107,14 @@ int main(int argc, char* argv[])
   return 0;
 }
 
+// Function implementations
+
 void readSettings( int argc, char* argv[], Settings& settings )
 {
   // defaults
   settings.input = "images/lenna.pgm";
   settings.output = "";
-  settings.type = DAUBECHIES;
+  settings.type = D4;
   settings.minErr = 25.0;
   settings.pixels = -1;
   settings.percentage = -1.0;
@@ -160,10 +124,28 @@ void readSettings( int argc, char* argv[], Settings& settings )
 
   for ( int i = 0; i < argc; i++ )
   {
-    if ( strcmp(argv[i],"-daubechies") == 0 )
-      settings.type = DAUBECHIES;
-    else if ( strcmp(argv[i],"-haar") == 0 )
-      settings.type = HAAR;
+    if ( strcmp(argv[i],"-d2") == 0 )
+      settings.type = D2;
+    else if ( strcmp(argv[i],"-d4") == 0 )
+      settings.type = D4;
+    else if ( strcmp(argv[i],"-d6") == 0 )
+      settings.type = D6;
+    else if ( strcmp(argv[i],"-d8") == 0 )
+      settings.type = D8;
+    else if ( strcmp(argv[i],"-d10") == 0 )
+      settings.type = D10;
+    else if ( strcmp(argv[i],"-d12") == 0 )
+      settings.type = D12;
+    else if ( strcmp(argv[i],"-d14") == 0 )
+      settings.type = D14;
+    else if ( strcmp(argv[i],"-d16") == 0 )
+      settings.type = D16;
+    else if ( strcmp(argv[i],"-d18") == 0 )
+      settings.type = D18;
+    else if ( strcmp(argv[i],"-d20") == 0 )
+      settings.type = D20;
+    else if ( strcmp(argv[i],"-d22") == 0 )
+      settings.type = D22;
     else if ( strcmp(argv[i],"-hideimages") == 0 )
       settings.showImages = false;
     else if ( strcmp(argv[i],"-hideprogress") == 0 )
@@ -201,20 +183,20 @@ void readSettings( int argc, char* argv[], Settings& settings )
     }
     else if ( strcmp(argv[i],"-help") == 0 )
     {
-      cout << "Commands are ..." << endl
-           << "\t-hideimages        don't display images    (shown by default)" << endl
-           << "\t-hideprogress      hide progress messages  (shown by default)" << endl
-           << "\t-hideresults       hide results statistics (shown by default)" << endl
-           << "\t-hideall           hide images,progress,results" << endl
-           << "\t-o FILENAME        save output file into file name" << endl
-           << "\t-i FILENAME        load image to compress  (default images/lenna.pgm)\n"
-           << "\nUse only one of the following (default -error 25.0)" << endl
-           << "\t-error FLOAT       specify max M.S.Error" << endl
-           << "\t-pixels INT        specify exact number of coeficients" << endl
-           << "\t-percentage FLOAT  specify exact percentage of pixel coeficients" << endl
-           << "\nUse only one of the following (default -daubechies)" << endl
-           << "\t-daubechies        use daubechies wavelets (default)" << endl
-           << "\t-haar              use haar wavelets" << endl
+      cout << "Commands are ..." << endl << endl
+           << "\t-hideimages           don't display images    (shown by default)" << endl
+           << "\t-hideprogress         hide progress messages  (shown by default)" << endl
+           << "\t-hideresults          hide results statistics (shown by default)" << endl
+           << "\t-hideall              hide images,progress,results" << endl
+           << "\t-o FILENAME           save output file into file name" << endl
+           << "\t-i FILENAME           load image to compress  (default images/lenna.pgm)\n"
+           << "\nUse only one of the following (default -error 25.0)" << endl << endl
+           << "\t-error FLOAT          specify max M.S.Error" << endl
+           << "\t-pixels INT           specify exact number of coeficients" << endl
+           << "\t-percentage FLOAT     specify exact percentage of pixel coeficients" << endl
+           << "\nUse only one of the following (default -d4)" << endl << endl
+           << "\t-d2,-d4,-d6,...,-d22  number of coeficients in daubechies kernel"
+              "(d2 is haar)" << endl
            << endl;
       exit(0);
     }
@@ -258,10 +240,7 @@ void removeExactCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, i
     coefs.pad(width,height);
 
   // wavelet transform
-  if ( type == HAAR )
-    jdg::waveletTrans( img, coefs, FILTERS.D2 );
-  else
-    jdg::waveletTrans( img, coefs, FILTERS.D10 );
+  jdg::waveletTrans( img, coefs, FILTERS(type) );
     
   if ( pixels >= height*width-1 )
     return; // don't need to remove any :p
@@ -309,10 +288,8 @@ int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double 
   if ( coefs.getWidth() != width || coefs.getHeight() != height )
     coefs.pad(width,height);
 
-  if ( type == HAAR )
-    jdg::waveletTrans( img, smallest, FILTERS.D2 );
-  else
-    jdg::waveletTrans( img, smallest, FILTERS.D10 );
+  // wavelet transform
+  jdg::waveletTrans( img, smallest, FILTERS(type) );
 
   uLeft = smallest(0,0);  // this needs to be in every image
   smallest(0,0) = 0.0;    // make it so that it's not counted when looking for max
@@ -337,10 +314,7 @@ int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double 
     
     coefs(0,0) = uLeft;
       
-    if ( type == HAAR )
-      jdg::iwaveletTrans( coefs, test, FILTERS.D2 );
-    else  
-      jdg::iwaveletTrans(coefs,test, FILTERS.D10 );
+    jdg::iwaveletTrans( coefs, test, FILTERS(type) );
 
     meanErr = mse(test, img);
 
