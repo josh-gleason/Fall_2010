@@ -29,7 +29,54 @@ struct Settings
   bool showResults;
 };
 
+template <class pType>
+struct Filters
+{
+  Filters() : D2(2), D4(4), D6(6), D8(8), D10(10)
+  {
+    D2[0] = 0.707106781,
+    D2[1] = 0.707106781;
+
+    D4[0] = 0.482962913,
+    D4[1] = 0.836516304,
+    D4[2] = 0.224143868,
+    D4[3] = -0.129409523;
+
+    D6[0] = 0.332670555,
+    D6[1] = 0.806891512,
+    D6[2] = 0.459877502,
+    D6[3] = -0.135011023,
+    D6[4] = -0.085441275,
+    D6[5] = 0.035226292;
+    
+    D8[0] = 0.230377814686837;
+    D8[1] = 0.714846574023517;
+    D8[2] = 0.630881660124131;
+    D8[3] = -0.0279837720786611;
+    D8[4] = -0.187034813579463;
+    D8[5] = 0.0308413815002668;
+    D8[6] = 0.0328830109095867;
+    D8[7] = -0.010597402258575;
+
+    D10[0] = 0.160102396147341;
+    D10[1] = 0.603829267884446;
+    D10[2] = 0.724308525426066;
+    D10[3] = 0.138428144948276;
+    D10[4] = -0.242294883260072;
+    D10[5] = -0.0322448682527693;
+    D10[6] = 0.0775714877291344;
+    D10[7] = -0.00624149013617742;
+    D10[8] = -0.0125807519269895;
+    D10[9] = 0.00333572527906182;
+  }
+
+  vector<pType> D2,D4,D6,D8,D10;
+};
+
 const int DIVIDER = 17;
+
+// define the filters
+const Filters<double> FILTERS;
 
 // find the 'size' largest points in the image and store in 'lst' which should
 // be pre-initialized to 'size' elements, ignores point (0,0)
@@ -76,9 +123,9 @@ int main(int argc, char* argv[])
 
   // reconstruct
   if ( settings.type == DAUBECHIES )
-    jdg::idaubechiesTransform(coefs,recons);
+    jdg::iwaveletTrans(coefs,recons, FILTERS.D10 );
   else if ( settings.type == HAAR )
-    jdg::ihaarTransform(coefs,recons);
+    jdg::iwaveletTrans(coefs,recons, FILTERS.D2 );
 
   // save results
   if ( settings.output != "" )
@@ -212,9 +259,9 @@ void removeExactCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, i
 
   // wavelet transform
   if ( type == HAAR )
-    jdg::haarTransform( img, coefs );
-  else  
-    jdg::daubechiesTransform( img, coefs );
+    jdg::waveletTrans( img, coefs, FILTERS.D2 );
+  else
+    jdg::waveletTrans( img, coefs, FILTERS.D10 );
     
   if ( pixels >= height*width-1 )
     return; // don't need to remove any :p
@@ -263,9 +310,9 @@ int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double 
     coefs.pad(width,height);
 
   if ( type == HAAR )
-    jdg::haarTransform( img, smallest );
-  else  
-    jdg::daubechiesTransform( img, smallest );
+    jdg::waveletTrans( img, smallest, FILTERS.D2 );
+  else
+    jdg::waveletTrans( img, smallest, FILTERS.D10 );
 
   uLeft = smallest(0,0);  // this needs to be in every image
   smallest(0,0) = 0.0;    // make it so that it's not counted when looking for max
@@ -291,9 +338,9 @@ int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double 
     coefs(0,0) = uLeft;
       
     if ( type == HAAR )
-      jdg::ihaarTransform( coefs, test );
+      jdg::iwaveletTrans( coefs, test, FILTERS.D2 );
     else  
-      jdg::idaubechiesTransform( coefs, test );
+      jdg::iwaveletTrans(coefs,test, FILTERS.D10 );
 
     meanErr = mse(test, img);
 

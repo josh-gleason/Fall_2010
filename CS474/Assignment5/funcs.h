@@ -111,6 +111,12 @@ template <class pType>
 void daubechiesTransform( const Image<pType>& img, Image<pType>& coefs );
 template <class pType>
 void idaubechiesTransform( const Image<pType>& img, Image<pType>& coefs );
+template <class pType>
+void waveletTrans( const Image<pType>& img, Image<pType>& coefs,
+  const std::vector<pType>& lowpass );
+template <class pType>
+void iwaveletTrans( const Image<pType>& img, Image<pType>& coefs,
+  const std::vector<pType>& lowpass );
 
 template <class pType>
 void fft( Image<std::complex<pType> >& f, int val )
@@ -631,6 +637,187 @@ void idaubechiesTransform( const Image<pType>& orig, Image<pType>& coef )
 
   delete [] temp;
 
+}
+
+// dim is the length of the high and low pass filters
+template <class pType>
+void waveletTrans( const Image<pType>& img, Image<pType>& coefs, const std::vector<pType>& lowpass )
+{
+  int height = std::pow(2, std::ceil(log(img.getHeight())/log(2)));
+  int width = std::pow(2, std::ceil(log(img.getWidth())/log(2)));
+
+  int length = std::max(height,width);
+
+  int dim = static_cast<int>(lowpass.size());
+
+  coefs = img;
+  
+  if ( coefs.getHeight() != length || coefs.getWidth() != length )
+    coefs.pad(length, length);  // pad image with zeros to make power of 2
+  
+  // temporary row/col for calculations
+  pType* temp = new pType[length];
+
+  // IDEA: mod index by the length each time for wrapping
+
+  int i, j, row, col, half;
+  
+  // define highpass from lowpass
+
+  std::vector<pType> highpass(dim);
+
+  j = 1;
+  for ( i = 0; i < dim; i++ )
+  {
+    highpass[i] = lowpass[dim-i-1]*j;
+    j *= -1;
+  }
+
+  while ( length >= 2 )
+  {
+    half = length / 2;
+
+    // rows
+    for ( row = 0; row < length; row++ )
+    {
+      for ( col = 0; col < half; col++ )
+      {
+        temp[col] = lowpass[0]*coefs(col*2,row);
+        temp[col+half] = highpass[0]*coefs(col*2,row);
+        for ( i = 1; i < dim; i++ )
+        {
+          temp[col] += lowpass[i]*coefs((col*2+i)%length,row);
+          temp[col+half] += highpass[i]*coefs((col*2+i)%length,row);
+        }
+      }
+
+      // copy values back
+      for ( col = 0; col < length; col++ )
+        coefs(col,row) = temp[col];
+    }
+
+    // columns
+    for ( col = 0; col < length; col++ )
+    {
+      for ( row = 0; row < half; row++ )
+      {
+        temp[row] = lowpass[0]*coefs(col,row*2);
+        temp[row+half] = highpass[0]*coefs(col,row*2);
+        for ( i = 1; i < dim; i++ )
+        {
+          temp[row] += lowpass[i]*coefs(col,(row*2+i)%length);
+          temp[row+half] += highpass[i]*coefs(col,(row*2+i)%length);
+        }
+      }
+      
+      // copy values back
+      for ( row = 0; row < length; row++ )
+        coefs(col,row) = temp[row];
+    }
+    
+    length /= 2;
+  }
+
+  delete [] temp;
+}
+
+template <class pType>
+void iwaveletTrans( const Image<pType>& img, Image<pType>& coefs, const std::vector<pType>& lowpass )
+{
+  int height = std::pow(2, std::ceil(log(img.getHeight())/log(2)));
+  int width = std::pow(2, std::ceil(log(img.getWidth())/log(2)));
+
+  int size = std::max(height,width);
+
+  int dim = static_cast<int>(lowpass.size());
+
+  coefs = img;
+  
+  if ( coefs.getHeight() != size || coefs.getWidth() != size )
+    coefs.pad(size, size);  // pad image with zeros to make power of 2
+  
+  // temporary row/col for calculations
+  pType* temp = new pType[size];
+
+  int i, j, row, col, half, length = 2;
+
+  std::vector<pType> highpass(dim), ilowpass(dim), ihighpass(dim);
+
+  j = 1;
+  for ( i = 0; i < dim; i++ )
+  {
+    highpass[i] = lowpass[dim-i-1]*j;
+    j *= -1;
+  }
+
+  for ( i = 0; i < dim; i+=2 )
+  {
+    ilowpass[i] = lowpass[dim-i-2];
+    ilowpass[i+1] = highpass[dim-i-2];
+  }
+
+  j = 1;
+  for ( i = 0; i < dim; i++ )
+  {
+    ihighpass[i] = ilowpass[dim-i-1]*j;
+    j *= -1;
+  }
+
+  while ( length <= size )
+  {
+    half = length / 2;
+
+    // columns
+    for ( col = 0; col < length; col++ )
+    {
+      for ( row = 0; row < half; row++ )
+      {
+        // start at zero
+        temp[row*2] = 0;
+        temp[row*2+1] = 0;
+
+        for ( i = 0; i < dim/2; i++ )
+        {
+          j = row + i - dim/2 + 1;
+          while ( j < 0 ) // adjust back up;
+            j += half;
+
+          temp[row*2] += coefs(col, j) * ilowpass[i*2]+coefs(col, j+half)*ilowpass[i*2+1];
+          temp[row*2+1] += coefs(col, j) * ihighpass[i*2]+coefs(col, j+half)*ihighpass[i*2+1];
+        }
+
+      }
+
+      for ( row = 0; row < length; row++ )
+        coefs(col,row) = temp[row];
+    }
+    
+    // rows
+    for ( row = 0; row < length; row++ )
+    {
+      for ( col = 0; col < half; col++ )
+      {
+        // index of array is [i]
+        temp[col*2] = 0;
+        temp[col*2+1] = 0;
+
+        for ( i = 0; i < dim/2; i++ )
+        {
+          j = col + i - dim/2 + 1;
+          while ( j < 0 ) // adjust back up;
+            j += half;
+
+          temp[col*2] += coefs(j, row) * ilowpass[i*2]+coefs(j+half, row)*ilowpass[i*2+1];
+          temp[col*2+1] += coefs(j, row) * ihighpass[i*2]+coefs(j+half, row)*ihighpass[i*2+1];
+        }
+      }
+
+      for ( col = 0; col < length; col++ )
+        coefs(col,row) = temp[col];
+    }
+
+    length *= 2;
+  }
 }
 
 }
