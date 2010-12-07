@@ -1,0 +1,16 @@
+#!/bin/bash
+
+img="lenna"
+
+rm `echo results/results_$img.txt`
+
+for e in {5..40..5}
+  do
+  for i in {2..22..2}
+    do
+      echo "error $e wavelet d$i"
+      echo "Error: $e  Wavelet: D$i  Image: images/$img.pgm" >> results/results_$img.txt
+      echo "Output: results/$img.$e.d$i.pgm" >> results/results_$img.txt
+      ./main -hideimages -hideprogress -i images/$img.pgm -o results/$img.$e.d$i.pgm -error $e -d$i | grep coef >> results/results_$img.txt
+    done
+  done
