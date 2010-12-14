@@ -1,0 +1,62 @@
+#!/bin/bash
+
+#script runs all kernels on image with error from 5 to 40 by increments of 5, saves
+#all images in results folder with format $name.$error.$kern.pgm.  Results information
+#is saved in results folder under name results/results_$name.txt
+
+img="$1"
+
+if [ $# != 0 ]
+then
+  if [ -f "results/results_$img.txt" ]
+  then
+    rm `echo results/results_$img.txt`
+  fi
+
+  for e in {5..40..5} 
+  do
+    for i in {2..22..2} 
+    do
+      if [ -f "results/results.$i.$img.txt" ]
+      then
+        rm results/results.$i.$img.txt
+      fi
+      echo "Error: $e  Wavelet: D$i  Image: images/$img.pgm" \
+        >> results/results.$i.$img.txt
+      echo "Output: results/$img.$e.d$i.pgm" >> results/results.$i.$img.txt
+      (./main \
+        -hideimages \
+        -hideprogress \
+        -i images/$img.pgm \
+        -o results/$img.$e.d$i.pgm \
+        -error $e \
+        -d$i \
+        | grep coef >> results/results.$i.$img.txt &)
+    done
+    
+    #wait for jobs to finish
+    wait
+
+    a=$e/40
+
+    echo "Complete: $a"
+
+    #add to final results file
+    for i in {2..22..2} 
+    do
+      if [ ! -f "results/results_$img.txt" ]
+      then
+        echo "" >> results/results_$img.txt
+      fi
+      cp results/results_$img.txt results/temp
+      cat results/temp results/results.$i.$img.txt > results/results_$img.txt
+      rm results/results.$i.$img.txt
+    done
+  done
+
+  rm results/temp
+else
+  echo "Please put name of image at images/*.pgm, Example ./runall lenna"
+fi
+wait
+

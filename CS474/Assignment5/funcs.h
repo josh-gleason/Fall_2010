@@ -335,7 +335,8 @@ void idealfilter( jdg::Image<pType>& filter, float D0, int type, float gammaL,
 
 // dim is the length of the high and low pass filters
 template <class pType>
-void waveletTrans( const Image<pType>& img, Image<pType>& coefs, const std::vector<pType>& lowpass )
+void waveletTrans( const Image<pType>& img, Image<pType>& coefs,
+  const std::vector<pType>& lowpass )
 {
   int height = std::pow(2, std::ceil(log(img.getHeight())/log(2)));
   int width = std::pow(2, std::ceil(log(img.getWidth())/log(2)));
@@ -416,7 +417,8 @@ void waveletTrans( const Image<pType>& img, Image<pType>& coefs, const std::vect
 }
 
 template <class pType>
-void iwaveletTrans( const Image<pType>& img, Image<pType>& coefs, const std::vector<pType>& lowpass )
+void iwaveletTrans( const Image<pType>& img, Image<pType>& coefs,
+  const std::vector<pType>& lowpass )
 {
   int height = std::pow(2, std::ceil(log(img.getHeight())/log(2)));
   int width = std::pow(2, std::ceil(log(img.getWidth())/log(2)));

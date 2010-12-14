@@ -50,7 +50,8 @@ double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 );
 // removes the most coefficients possible to maintain the mean square error less than maxErr
 // coefs will contain the image in the wavelet domain (before inverse)
 template <class pType>
-int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double maxErr, Wavelet type, bool showProgress );
+int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double maxErr,
+  Wavelet type, bool showProgress );
 
 // simply removes 'pixels' number of coeficients from the wavelet transform of img
 // coefs will contain the image in the wavelet domain (before inverse)
@@ -356,7 +357,6 @@ int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double 
 
   return mid;
 }
-
 
 template <class pType>
 void findLargest( jdg::Image<pType>& img, vector<Point<pType> >& lst, int size )
