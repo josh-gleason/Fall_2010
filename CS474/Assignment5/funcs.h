@@ -461,6 +461,30 @@ void iwaveletTrans( const Image<pType>& img, Image<pType>& coefs, const std::vec
   {
     half = length / 2;
 
+    // rows
+    for ( row = 0; row < length; row++ )
+    {
+      for ( col = 0; col < half; col++ )
+      {
+        // index of array is [i]
+        temp[col*2] = 0;
+        temp[col*2+1] = 0;
+
+        for ( i = 0; i < dim/2; i++ )
+        {
+          j = col + i - dim/2 + 1;
+          while ( j < 0 ) // adjust back up;
+            j += half;
+
+          temp[col*2] += coefs(j, row) * ilowpass[i*2]+coefs(j+half, row)*ilowpass[i*2+1];
+          temp[col*2+1] += coefs(j, row) * ihighpass[i*2]+coefs(j+half, row)*ihighpass[i*2+1];
+        }
+      }
+
+      for ( col = 0; col < length; col++ )
+        coefs(col,row) = temp[col];
+    }
+    
     // columns
     for ( col = 0; col < length; col++ )
     {
@@ -486,29 +510,6 @@ void iwaveletTrans( const Image<pType>& img, Image<pType>& coefs, const std::vec
         coefs(col,row) = temp[row];
     }
     
-    // rows
-    for ( row = 0; row < length; row++ )
-    {
-      for ( col = 0; col < half; col++ )
-      {
-        // index of array is [i]
-        temp[col*2] = 0;
-        temp[col*2+1] = 0;
-
-        for ( i = 0; i < dim/2; i++ )
-        {
-          j = col + i - dim/2 + 1;
-          while ( j < 0 ) // adjust back up;
-            j += half;
-
-          temp[col*2] += coefs(j, row) * ilowpass[i*2]+coefs(j+half, row)*ilowpass[i*2+1];
-          temp[col*2+1] += coefs(j, row) * ihighpass[i*2]+coefs(j+half, row)*ihighpass[i*2+1];
-        }
-      }
-
-      for ( col = 0; col < length; col++ )
-        coefs(col,row) = temp[col];
-    }
 
     length *= 2;
   }
