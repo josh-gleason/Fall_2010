@@ -1,0 +1,6 @@
+#!/bin/bash
+#crop all the pdf files in the directory (may also rotate)
+for i in *.pdf
+  do
+		./pdfcrop -m 0 -q $i $i
+  done

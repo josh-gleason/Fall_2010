@@ -158,8 +158,10 @@ void fft( Image<std::complex<pType> >& f, int val )
         static_cast<pType>(ary_vals[2*i]),     // real part
         static_cast<pType>(ary_vals[2*i+1]));  // imaginary part
       
-      if ( val > 0 )
-        f(i,row) *= 1.0/(height*width);
+      if ( val < 0 )
+        f(i,row) *= 1.0/(height);
+      else
+        f(i,row) *= 1.0/(width);
     }
   }
 
@@ -439,6 +441,7 @@ void iwaveletTrans( const Image<pType>& img, Image<pType>& coefs,
 
   std::vector<pType> highpass(dim), ilowpass(dim), ihighpass(dim);
 
+  // build inverse filters
   j = 1;
   for ( i = 0; i < dim; i++ )
   {
@@ -462,7 +465,7 @@ void iwaveletTrans( const Image<pType>& img, Image<pType>& coefs,
   while ( length <= size )
   {
     half = length / 2;
-
+    
     // rows
     for ( row = 0; row < length; row++ )
     {
@@ -486,7 +489,7 @@ void iwaveletTrans( const Image<pType>& img, Image<pType>& coefs,
       for ( col = 0; col < length; col++ )
         coefs(col,row) = temp[col];
     }
-    
+
     // columns
     for ( col = 0; col < length; col++ )
     {
@@ -511,7 +514,6 @@ void iwaveletTrans( const Image<pType>& img, Image<pType>& coefs,
       for ( row = 0; row < length; row++ )
         coefs(col,row) = temp[row];
     }
-    
 
     length *= 2;
   }

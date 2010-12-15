@@ -23,21 +23,17 @@ then
       fi
       echo "Error: $e  Wavelet: D$i  Image: images/$img.pgm" \
         >> results/results.$i.$img.txt
-      echo "Output: results/$img.$e.d$i.pgm" >> results/results.$i.$img.txt
-      (./main \
-        -hideimages \
-        -hideprogress \
-        -i images/$img.pgm \
-        -o results/$img.$e.d$i.pgm \
-        -error $e \
-        -d$i \
-        | grep coef >> results/results.$i.$img.txt &)
+			#-o images/${img}_d${i}_${e}.pgm \
+      ./main \
+				-hideimages \
+				-hideprogress \
+				-i images/$img.pgm \
+				-error $e \
+				-d$i \
+				| grep "coef" >> results/results.$i.$img.txt
     done
     
-    #wait for jobs to finish
-    wait
-
-    a=$e/40
+		a=$e/50
 
     echo "Complete: $a"
 
@@ -46,7 +42,7 @@ then
     do
       if [ ! -f "results/results_$img.txt" ]
       then
-        echo "" >> results/results_$img.txt
+        echo "" > results/results_$img.txt
       fi
       cp results/results_$img.txt results/temp
       cat results/temp results/results.$i.$img.txt > results/results_$img.txt

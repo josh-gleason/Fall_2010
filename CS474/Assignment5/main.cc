@@ -17,7 +17,7 @@ struct Point
 
 struct Settings
 {
-  string input, output;
+  string input, output, output_before, output_after;
   double minErr;
   int pixels;
   double percentage;
@@ -75,6 +75,14 @@ int main(int argc, char* argv[])
   if ( settings.showImages )
     img.show();
 
+  // save coefficients before image
+  if ( settings.output_before != "" )
+  {
+    jdg::waveletTrans(img, coefs, FILTERS(settings.type));
+    coefs.normalize(jdg::MINMAX_LOG, 0.0, 255.0 );
+    coefs.save(settings.output_before);
+  }
+
   // remove coefficients
   if ( settings.pixels > 0 )
     removeExactCoefs( img, coefs, settings.pixels, settings.type );
@@ -90,6 +98,17 @@ int main(int argc, char* argv[])
   // reconstruct
   jdg::iwaveletTrans(coefs,recons, FILTERS(settings.type) );
 
+  // save coefficients after image
+  if ( settings.output_after != "" )
+  {
+    coefs.normalize( jdg::MINMAX_LOG, 0.0, 255.0 );
+    coefs.save(settings.output_after);
+  }
+
+  // pad back to original size
+  if ( recons.getWidth() != img.getWidth() || recons.getHeight() != img.getHeight() )
+    recons.pad(img.getWidth(), img.getHeight());
+
   // save results
   if ( settings.output != "" )
     recons.save(settings.output);
@@ -103,7 +122,10 @@ int main(int argc, char* argv[])
   
   // show output image
   if ( settings.showImages )
+  {
+    recons.normalize(jdg::THRESHOLD, 0.0, 255.0);
     recons.show();
+  }
 
   return 0;
 }
@@ -115,6 +137,8 @@ void readSettings( int argc, char* argv[], Settings& settings )
   // defaults
   settings.input = "images/lenna.pgm";
   settings.output = "";
+  settings.output_before = "";
+  settings.output_after = "";
   settings.type = D4;
   settings.minErr = 25.0;
   settings.pixels = -1;
@@ -157,6 +181,16 @@ void readSettings( int argc, char* argv[], Settings& settings )
       settings.showImages =
       settings.showProgress =
       settings.showResults = false;
+    else if ( strcmp(argv[i],"-ocoefbefore") == 0 )
+    {
+      if ( argc > i )
+        settings.output_before = argv[++i];
+    }
+    else if ( strcmp(argv[i],"-ocoefafter") == 0 )
+    {
+      if ( argc > i )
+        settings.output_after = argv[++i];
+    }
     else if ( strcmp(argv[i],"-o") == 0 )
     {
       if ( argc > i )
@@ -208,13 +242,13 @@ template <class pType>
 double mse( const jdg::Image<pType>& img1, const jdg::Image<pType>& img2 )
 {
   // assumes same width and height
+  int width = img1.getWidth();
   int height = img1.getHeight();
-  int width = img2.getHeight();
 
   double meanerr = 0.0;
   pType diff;
-  for ( int x = 0; x < height; x++ )
-    for ( int y = 0; y < width; y++ )
+  for ( int x = 0; x < width; x++ )
+    for ( int y = 0; y < height; y++ )
     {
       diff = img1(x,y)-img2(x,y);
       meanerr += diff*diff;
@@ -269,11 +303,8 @@ template <class pType>
 int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double maxErr,
   Wavelet type, bool showProgress )
 {
-  int height = img.getHeight(),
-      width = img.getWidth();
-  int min = 0,
-      max = height * width - 1;
-  int mid=0;
+  int origHeight = img.getHeight(),
+      origWidth = img.getWidth();
 
   pType uLeft;
 
@@ -283,14 +314,20 @@ int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double 
   vector<Point<pType> > lst;
 
   // holds all the coeficients, then all the ones that are put into lst are removed
-  jdg::Image<pType> smallest(width,height), test(width,height);
-
-  // resize coefs if required
-  if ( coefs.getWidth() != width || coefs.getHeight() != height )
-    coefs.pad(width,height);
+  jdg::Image<pType> smallest(origWidth,origHeight), test(origWidth,origHeight);
 
   // wavelet transform
   jdg::waveletTrans( img, smallest, FILTERS(type) );
+
+  int height = smallest.getHeight(),
+      width = smallest.getHeight();
+  int min = 0,
+      max = height * width - 1;
+  int mid = 0;
+  
+  // resize coefs if required
+  if ( coefs.getWidth() != width || coefs.getHeight() != height )
+    coefs.pad(width,height);
 
   uLeft = smallest(0,0);  // this needs to be in every image
   smallest(0,0) = 0.0;    // make it so that it's not counted when looking for max
@@ -316,6 +353,9 @@ int removeCoefs( const jdg::Image<pType>& img, jdg::Image<pType>& coefs, double 
     coefs(0,0) = uLeft;
       
     jdg::iwaveletTrans( coefs, test, FILTERS(type) );
+
+    if ( test.getWidth() != origWidth || test.getHeight() != origHeight )
+      test.pad(origWidth, origHeight);
 
     meanErr = mse(test, img);
 

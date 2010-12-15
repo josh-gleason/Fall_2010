@@ -32,7 +32,7 @@ namespace jdg
 enum PadWith { ZEROS=0, NEAREST=1, WRAP=2, MIRROR=3 };
 
 // L1 makes all sum to param1 in normalize function
-enum NormType { MINMAX=0, MINMAX_LOG=1, L1=2 };
+enum NormType { MINMAX=0, MINMAX_LOG=1, L1=2, THRESHOLD=3 };
 
 template <class pType>
 class Image
@@ -389,6 +389,15 @@ void Image<pType>::normalize( const NormType type, pType param1, pType param2 )
       for ( int i = _width * _height - 1; i >= 0; --i )
         _data[i] *= sum;
     }
+  }
+  else if ( type == THRESHOLD )
+  {
+    // simply cut off values below and above min/max
+    for ( int i = _width * _height - 1; i >= 0; --i )
+      if ( _data[i] > param2 )
+        _data[i] = param2;
+      else if ( _data[i] < param1 )
+        _data[i] = param1;
   }
 }
 
@@ -1453,7 +1462,14 @@ void jdg::Image<pType>::save(const std::string& filename) const
   // convert the integer values to unsigned char
 
   for(i=_height*_width-1; i>=0; --i)
-    charImage[i]=static_cast<unsigned char>(_data[i]);
+  {
+    if ( _data[i] > static_cast<pType>(255) )
+      charImage[i] = static_cast<unsigned char>(255);
+    else if ( _data[i] < static_cast<pType>(0) )
+      charImage[i] = static_cast<unsigned char>(0);
+    else
+      charImage[i]=static_cast<unsigned char>(_data[i]);
+  }
 
   ofp.open(filename.c_str(), std::ios::out | std::ios::binary);
 

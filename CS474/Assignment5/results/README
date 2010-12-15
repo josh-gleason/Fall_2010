@@ -1,0 +1,2 @@
+run the a.out on the resutls_*.txt to create the mat file, then run the
+m file in octave to build the results chart
