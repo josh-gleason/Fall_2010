@@ -1281,7 +1281,7 @@ template <class pType>
 void jdg::Image<pType>::load(const std::string& filename)
 {
   int i;
-  int N, M, Q;
+  int N, M; //, Q;
   unsigned char *charImage;
   char header [100], *ptr;
   std::ifstream ifp;
@@ -1310,7 +1310,7 @@ void jdg::Image<pType>::load(const std::string& filename)
   N=atoi(ptr);
 
   ifp.getline(header,100,'\n');
-  Q=strtol(header,&ptr,0);
+  //Q=strtol(header,&ptr,0);
 
   charImage = (unsigned char *) new unsigned char [M*N];
 

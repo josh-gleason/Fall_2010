@@ -1,0 +1,7 @@
+To build documentation (Report.pdf)
+
+make
+./main
+cd Documentation
+make
+
