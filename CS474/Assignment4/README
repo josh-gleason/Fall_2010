@@ -1,0 +1,12 @@
+So apparently the doc didn't get updated. Only the images show up in the report.
+
+To build the documentation (starting in this directory)
+
+cd images
+./tojpg
+cd ..
+make
+./main
+cd Documentation
+make
+
