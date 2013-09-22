@@ -1,0 +1,56 @@
+#!/bin/bash
+
+g++ fixres.cc -o fixres
+
+./fixres results_boat.txt matresults.txt
+octave --eval "buildgraph('matresults.txt')"
+cp output.pdf graphs/boat_results.pdf
+octave --eval "buildbar('zeros_boat.txt')"
+cp bar.pdf graphs/boat_zeros.pdf
+
+./fixres results_f_16.txt matresults.txt
+octave --eval "buildgraph('matresults.txt')"
+cp output.pdf graphs/f_16_results.pdf
+octave --eval "buildbar('zeros_f_16.txt')"
+cp bar.pdf graphs/f_16_zeros.pdf
+
+./fixres results_gradient.txt matresults.txt
+octave --eval "buildgraph('matresults.txt')"
+cp output.pdf graphs/gradient_results.pdf
+octave --eval "buildbar('zeros_gradient.txt')"
+cp bar.pdf graphs/gradient_zeros.pdf
+
+./fixres results_konye.txt matresults.txt
+octave --eval "buildgraph('matresults.txt')"
+cp output.pdf graphs/konye_results.pdf
+octave --eval "buildbar('zeros_konye.txt')"
+cp bar.pdf graphs/konye_zeros.pdf
+
+./fixres results_lenna.txt matresults.txt
+octave --eval "buildgraph('matresults.txt')"
+cp output.pdf graphs/lenna_results.pdf
+octave --eval "buildbar('zeros_lenna.txt')"
+cp bar.pdf graphs/lenna_zeros.pdf
+
+./fixres results_peppers.txt matresults.txt
+octave --eval "buildgraph('matresults.txt')"
+cp output.pdf graphs/peppers_results.pdf
+octave --eval "buildbar('zeros_peppers.txt')"
+cp bar.pdf graphs/peppers_zeros.pdf
+
+./fixres results_tools.txt matresults.txt
+octave --eval "buildgraph('matresults.txt')"
+cp output.pdf graphs/tools_results.pdf
+octave --eval "buildbar('zeros_tools.txt')"
+cp bar.pdf graphs/tools_zeros.pdf
+
+./fixres results_wheel.txt matresults.txt
+octave --eval "buildgraph('matresults.txt')"
+cp output.pdf graphs/wheel_results.pdf
+octave --eval "buildbar('zeros_wheel.txt')"
+cp bar.pdf graphs/wheel_zeros.pdf
+
+rm output.pdf
+rm matresults.txt
+rm fixres
+

@@ -1,58 +1,17 @@
 #!/bin/bash
 
-#script runs all kernels on image with error from 5 to 40 by increments of 5, saves
-#all images in results folder with format $name.$error.$kern.pgm.  Results information
-#is saved in results folder under name results/results_$name.txt
+make main
+make countzeros
 
-img="$1"
-
-if [ $# != 0 ]
-then
-  if [ -f "results/results_$img.txt" ]
-  then
-    rm `echo results/results_$img.txt`
-  fi
-
-  for e in {5..40..5} 
-  do
-    for i in {2..22..2} 
-    do
-      if [ -f "results/results.$i.$img.txt" ]
-      then
-        rm results/results.$i.$img.txt
-      fi
-      echo "Error: $e  Wavelet: D$i  Image: images/$img.pgm" \
-        >> results/results.$i.$img.txt
-			#-o images/${img}_d${i}_${e}.pgm \
-      ./main \
-				-hideimages \
-				-hideprogress \
-				-i images/$img.pgm \
-				-error $e \
-				-d$i \
-				| grep "coef" >> results/results.$i.$img.txt
-    done
-    
-		a=$e/50
-
-    echo "Complete: $a"
-
-    #add to final results file
-    for i in {2..22..2} 
-    do
-      if [ ! -f "results/results_$img.txt" ]
-      then
-        echo "" > results/results_$img.txt
-      fi
-      cp results/results_$img.txt results/temp
-      cat results/temp results/results.$i.$img.txt > results/results_$img.txt
-      rm results/results.$i.$img.txt
-    done
-  done
-
-  rm results/temp
-else
-  echo "Please put name of image at images/*.pgm, Example ./runall lenna"
-fi
-wait
+./runtests boat
+./runtests f_16
+./runtests gradient
+./runtests konye
+./runtests lenna
+./runtests peppers
+./runtests tools
+./runtests wheel
+cd results && ./buildall && cd ..
+rm main
+rm countzeros
 

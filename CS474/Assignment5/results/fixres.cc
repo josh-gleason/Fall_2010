@@ -11,6 +11,10 @@ int main(int argc, char* argv[])
 
   ifstream fin(argv[1]);
   ofstream fout(argv[2]);
+  ofstream fout2;
+  
+  if ( argc > 2 )
+      fout2.open(argv[3]);
 
   string temp;
   char garb;
