@@ -2,6 +2,7 @@
 #define JDG_FUNCTIONS
 
 #include "image.h"
+#include <cmath>
 
 namespace numrec
 {
@@ -178,11 +179,11 @@ void convolve( Image<std::complex<pType> >& img,
   
   int origW = img.getWidth(), origH = img.getHeight();
   int dims = 
-    max( img.getWidth(), img.getHeight() ) +
-    max( kern.getWidth(), kern.getHeight() );
+    std::max( img.getWidth(), img.getHeight() ) +
+    std::max( kern.getWidth(), kern.getHeight() );
 
-  int shiftX = min(img.getWidth(), kernel.getWidth())/2;
-  int shiftY = min(img.getHeight(), kernel.getHeight())/2;
+  int shiftX = std::min(img.getWidth(), kernel.getWidth())/2;
+  int shiftY = std::min(img.getHeight(), kernel.getHeight())/2;
 
   // pad images
   img.pad( dims, dims, pad, shiftX, shiftY );
@@ -207,7 +208,7 @@ void convolve( Image<std::complex<pType> >& img,
 
 template <class pType>
 void convolve_spacial( Image<pType>& img,
-  const Image<pType>& kernel, const PadWith=NEAREST )
+  const Image<pType>& kernel, const PadWith )
 {
   int width = img.getWidth(),
       height = img.getHeight(),
