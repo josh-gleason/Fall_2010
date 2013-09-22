@@ -1,0 +1,6 @@
+To build the report (Documentation/Report.pdf)
+
+./runall
+cd Documentation
+make
+
